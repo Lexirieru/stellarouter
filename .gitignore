@@ -1,0 +1,11 @@
+# Reference material (design inspiration, not part of the product)
+references/
+
+# Secrets — never commit private keys
+.env
+.env.local
+.env.*.local
+
+# OS / editor cruft
+.DS_Store
+*.log
