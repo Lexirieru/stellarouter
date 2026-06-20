@@ -4,3 +4,8 @@ target
 # Local settings
 .soroban
 .stellar
+
+# Secrets — JANGAN pernah commit private key
+.env
+.env.local
+.env.*.local
