@@ -49,6 +49,8 @@ export default function CreditsPage() {
     void refresh();
   }, [refresh]);
 
+  // One button: enables USDC (trustline) if needed, then deposits — seamless.
+  // Two signatures when no trustline (Soroban txs can't bundle a classic op).
   async function topUp() {
     if (!address) return;
     const usdc = parseFloat(amount);
@@ -56,27 +58,33 @@ export default function CreditsPage() {
       setError("Enter a positive amount.");
       return;
     }
-    if (wallet !== null && usdc > wallet) {
-      setError("Amount exceeds your wallet USDC balance.");
-      return;
-    }
-    await sign("deposit", await buildDeposit(address, toStroops(usdc)));
-  }
-
-  async function refund() {
-    if (!address || !credit || credit <= BigInt(0)) return;
-    await sign("refund", await buildWithdraw(address, credit));
-  }
-
-  async function addTrustline() {
-    if (!address) return;
-    setBusy("trustline");
     setError(null);
     setTx(null);
     try {
-      const xdr = await buildAddTrustline(address);
-      const signed = await signTransaction(xdr);
-      const hash = await submitClassic(signed);
+      // Step 1 — enable USDC on the wallet if there's no trustline yet.
+      if (!trustline) {
+        setBusy("trustline");
+        const txdr = await buildAddTrustline(address);
+        await submitClassic(await signTransaction(txdr));
+        setTrustline(true);
+      }
+
+      // Re-read the wallet balance (it may be 0 right after enabling).
+      const info = await walletUsdcInfo(address);
+      setWallet(info.balance);
+      if (info.balance < usdc) {
+        setError(
+          info.balance === 0
+            ? "USDC enabled ✓ — your wallet has 0 USDC. Receive some, then top up."
+            : `Amount exceeds your wallet USDC balance (${info.balance}).`
+        );
+        return;
+      }
+
+      // Step 2 — deposit into the credits contract.
+      setBusy("deposit");
+      const dxdr = await buildDeposit(address, toStroops(usdc));
+      const hash = await submit(await signTransaction(dxdr));
       setTx(hash);
       await refresh();
     } catch (e) {
@@ -84,6 +92,11 @@ export default function CreditsPage() {
     } finally {
       setBusy(null);
     }
+  }
+
+  async function refund() {
+    if (!address || !credit || credit <= BigInt(0)) return;
+    await sign("refund", await buildWithdraw(address, credit));
   }
 
   async function sign(kind: "deposit" | "refund", xdr: string) {
@@ -116,24 +129,6 @@ export default function CreditsPage() {
         </p>
       ) : (
         <div className="mt-6 flex flex-col gap-5">
-          {!trustline && (
-            <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4">
-              <div className="text-sm font-medium text-amber-700">
-                Your wallet has no USDC trustline yet.
-              </div>
-              <p className="mt-1 text-xs text-zinc-600">
-                Add it to receive USDC and top up credit.
-              </p>
-              <button
-                onClick={() => void addTrustline()}
-                disabled={busy !== null}
-                className="mt-2 rounded-lg bg-[var(--color-darkblue)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-              >
-                {busy === "trustline" ? "adding…" : "Add USDC trustline"}
-              </button>
-            </div>
-          )}
-
           {/* Credit balance + refund */}
           <div className="rounded-xl border border-black/10 p-5">
             <div className="flex items-start justify-between">
@@ -171,6 +166,12 @@ export default function CreditsPage() {
                 {wallet === null ? "—" : wallet.toFixed(4)} USDC available
               </span>
             </div>
+            {!trustline && (
+              <p className="mt-2 text-[11px] text-zinc-500">
+                Your first top up also enables USDC on your wallet (one extra
+                signature).
+              </p>
+            )}
             <div className="mt-3 flex items-end gap-2">
               <label className="flex flex-1 flex-col gap-1">
                 <span className="text-xs text-zinc-500">Amount (USDC)</span>
@@ -185,10 +186,14 @@ export default function CreditsPage() {
               </label>
               <button
                 onClick={() => void topUp()}
-                disabled={busy !== null || !trustline}
+                disabled={busy !== null}
                 className="rounded-lg bg-[var(--color-darkblue)] px-5 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
               >
-                {busy === "deposit" ? "topping up…" : "Top up"}
+                {busy === "trustline"
+                  ? "enabling USDC…"
+                  : busy === "deposit"
+                    ? "topping up…"
+                    : "Top up"}
               </button>
             </div>
           </div>
