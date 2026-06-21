@@ -4,6 +4,15 @@
 
 const UPSTREAM_BASE_URL = process.env.UPSTREAM_BASE_URL; // e.g. https://api.openai.com/v1
 const UPSTREAM_API_KEY = process.env.UPSTREAM_API_KEY;
+// Some upstreams namespace models by provider (e.g. 9router expects
+// "openrouter/openai/gpt-4o-mini"). Prepend this prefix when set.
+const MODEL_PREFIX = process.env.UPSTREAM_MODEL_PREFIX || "";
+
+function applyPrefix(body) {
+  if (!MODEL_PREFIX || typeof body?.model !== "string") return body;
+  if (body.model.startsWith(MODEL_PREFIX)) return body;
+  return { ...body, model: MODEL_PREFIX + body.model };
+}
 
 export async function chatCompletion(body) {
   // No upstream configured → mock completion (payment already settled by now).
@@ -35,12 +44,22 @@ export async function chatCompletion(body) {
       "content-type": "application/json",
       authorization: `Bearer ${UPSTREAM_API_KEY}`,
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(applyPrefix(body)),
   });
 
+  const text = await resp.text();
   if (!resp.ok) {
-    const text = await resp.text();
     throw new Error(`upstream ${resp.status}: ${text.slice(0, 300)}`);
   }
-  return resp.json();
+  // Some upstreams (9router) append a trailing "data: [DONE]" after the JSON
+  // and/or leading whitespace — strip those before parsing.
+  const cleaned = text
+    .trim()
+    .replace(/\s*data:\s*\[DONE\][\s\S]*$/i, "")
+    .trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    throw new Error(`upstream parse error: ${cleaned.slice(0, 200)}`);
+  }
 }

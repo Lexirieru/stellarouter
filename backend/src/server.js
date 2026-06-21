@@ -102,9 +102,10 @@ app.delete("/keys/:key", (req, res) => {
   res.json({ revoked: revokeKey(req.params.key) });
 });
 
-// Model catalog — proxies the upstream (OpenRouter) models list for the UI.
+// Model catalog for the UI — kept on the OpenRouter catalog (rich list),
+// independent of where chat is actually routed (UPSTREAM_BASE_URL → 9router).
 app.get("/models", async (_req, res) => {
-  const base = process.env.UPSTREAM_BASE_URL || "https://openrouter.ai/api/v1";
+  const base = process.env.MODELS_BASE_URL || "https://openrouter.ai/api/v1";
   try {
     const r = await fetch(`${base}/models?output_modalities=all`);
     const data = await r.json();
