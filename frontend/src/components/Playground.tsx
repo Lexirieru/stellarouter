@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { SegmentedToggle } from "./SegmentedToggle";
+import { ModelSelect } from "./ModelSelect";
 
 const GATEWAY = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3001";
 
@@ -89,32 +91,19 @@ export function Playground() {
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-6 py-8">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">Playground</h1>
-        <select
-          value={model}
-          onChange={(e) => setModel(e.target.value)}
-          className="rounded-lg border border-black/15 bg-transparent px-3 py-1.5 text-sm"
-        >
-          {MODELS.map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-        </select>
+        <ModelSelect models={MODELS} value={model} onChange={setModel} />
       </div>
 
       {/* Door toggle */}
-      <div className="flex gap-1 rounded-full border border-black/10 p-1 text-sm self-start">
-        {(["agent", "human"] as Mode[]).map((m) => (
-          <button
-            key={m}
-            onClick={() => setMode(m)}
-            className={`rounded-full px-4 py-1.5 transition-colors ${
-              mode === m ? "bg-[var(--color-darkblue)] text-white" : "hover:bg-black/[.05]"
-            }`}
-          >
-            {m === "agent" ? "Agent (x402)" : "Human (prepaid)"}
-          </button>
-        ))}
+      <div className="self-start">
+        <SegmentedToggle
+          options={[
+            { value: "agent", label: "Agent (x402)" },
+            { value: "human", label: "Human (prepaid)" },
+          ]}
+          value={mode}
+          onChange={setMode}
+        />
       </div>
 
       <p className="text-sm text-zinc-500">
