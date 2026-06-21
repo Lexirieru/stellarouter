@@ -1,20 +1,27 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { ModelSelect } from "@/components/ModelSelect";
 
 const GATEWAY = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3001";
+const PAGE_SIZE = 12;
 
 type Model = {
   id: string;
   name: string;
   description?: string;
   context_length?: number;
+  created?: number;
   pricing?: { prompt?: string; completion?: string };
+  architecture?: { output_modalities?: string[] };
 };
+
+const SORTS = ["Newest", "Price: low → high", "Context: high → low"];
 
 const perM = (v?: string) => {
   const n = Number(v ?? 0) * 1e6;
-  if (!Number.isFinite(n) || n === 0) return "Free";
+  if (!Number.isFinite(n) || n < 0) return "—"; // variable pricing
+  if (n === 0) return "Free";
   return `$${n.toFixed(n < 1 ? 3 : 2)}/M`;
 };
 
@@ -25,9 +32,14 @@ const ctx = (n?: number) => {
   return String(n);
 };
 
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
 export default function ModelsPage() {
   const [models, setModels] = useState<Model[]>([]);
   const [q, setQ] = useState("");
+  const [tab, setTab] = useState("all");
+  const [sort, setSort] = useState(SORTS[0]);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,14 +58,50 @@ export default function ModelsPage() {
     })();
   }, []);
 
+  // Modality tabs with counts.
+  const tabs = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const m of models) {
+      for (const mod of m.architecture?.output_modalities ?? ["text"]) {
+        counts[mod] = (counts[mod] || 0) + 1;
+      }
+    }
+    const ordered = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    return [
+      { key: "all", label: "All", count: models.length },
+      ...ordered.map(([key, count]) => ({ key, label: cap(key), count })),
+    ];
+  }, [models]);
+
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    if (!s) return models;
-    return models.filter(
-      (m) =>
-        m.id.toLowerCase().includes(s) || m.name?.toLowerCase().includes(s)
-    );
-  }, [q, models]);
+    let list = models.filter((m) => {
+      const inTab =
+        tab === "all" ||
+        (m.architecture?.output_modalities ?? ["text"]).includes(tab);
+      const inSearch =
+        !s || m.id.toLowerCase().includes(s) || m.name?.toLowerCase().includes(s);
+      return inTab && inSearch;
+    });
+    list = [...list].sort((a, b) => {
+      if (sort === SORTS[1]) {
+        return Number(a.pricing?.prompt ?? Infinity) - Number(b.pricing?.prompt ?? Infinity);
+      }
+      if (sort === SORTS[2]) {
+        return (b.context_length ?? 0) - (a.context_length ?? 0);
+      }
+      return (b.created ?? 0) - (a.created ?? 0); // Newest
+    });
+    return list;
+  }, [models, q, tab, sort]);
+
+  // Reset to page 1 whenever the result set changes.
+  useEffect(() => {
+    setPage(1);
+  }, [q, tab, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-8">
@@ -65,12 +113,36 @@ export default function ModelsPage() {
         One API for hundreds of models — pay per call in USDC on Stellar.
       </p>
 
-      <input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Search models…"
-        className="mt-4 w-full rounded-full border border-black/15 bg-transparent px-4 py-2.5 text-sm outline-none focus:border-black/40"
-      />
+      {/* Search + sort */}
+      <div className="mt-4 flex items-center gap-2">
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search models…"
+          className="flex-1 rounded-full border border-black/15 bg-transparent px-4 py-2.5 text-sm outline-none focus:border-black/40"
+        />
+        <ModelSelect models={SORTS} value={sort} onChange={setSort} />
+      </div>
+
+      {/* Modality tabs */}
+      <div className="mt-4 flex flex-wrap gap-1 border-b border-black/10 pb-2">
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`rounded-full px-3 py-1 text-sm transition-colors ${
+              tab === t.key
+                ? "bg-[var(--color-darkblue)] text-white"
+                : "text-zinc-600 hover:bg-black/[.05]"
+            }`}
+          >
+            {t.label}{" "}
+            <span className={tab === t.key ? "opacity-80" : "text-zinc-400"}>
+              {t.count}
+            </span>
+          </button>
+        ))}
+      </div>
 
       {loading && <p className="mt-6 text-sm text-zinc-500">Loading models…</p>}
       {error && (
@@ -80,7 +152,7 @@ export default function ModelsPage() {
       )}
 
       <div className="mt-4 flex flex-col gap-3">
-        {filtered.map((m) => (
+        {pageItems.map((m) => (
           <div key={m.id} className="rounded-xl border border-black/10 p-4">
             <div className="flex items-center justify-between gap-3">
               <div className="font-semibold">{m.name}</div>
@@ -101,6 +173,29 @@ export default function ModelsPage() {
           </div>
         ))}
       </div>
+
+      {/* Pagination */}
+      {!loading && filtered.length > 0 && (
+        <div className="mt-6 flex items-center justify-center gap-4 text-sm">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1}
+            className="rounded-lg border border-black/15 px-3 py-1.5 transition-colors hover:bg-black/[.04] disabled:opacity-40"
+          >
+            ‹ Prev
+          </button>
+          <span className="text-zinc-500">
+            Page {page} of {totalPages}
+          </span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page >= totalPages}
+            className="rounded-lg border border-black/15 px-3 py-1.5 transition-colors hover:bg-black/[.04] disabled:opacity-40"
+          >
+            Next ›
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -17,12 +17,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full antialiased">
-      <body className="min-h-full">
+      <body className="h-full">
         <CursorBubble />
         <WalletProvider>
-          <div className="flex min-h-screen">
+          <div className="flex h-screen overflow-hidden">
             <ConsoleNav />
-            <main className="flex flex-1 flex-col">{children}</main>
+            <main className="flex-1 overflow-y-auto">{children}</main>
           </div>
         </WalletProvider>
       </body>

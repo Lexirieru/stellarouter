@@ -106,7 +106,7 @@ app.delete("/keys/:key", (req, res) => {
 app.get("/models", async (_req, res) => {
   const base = process.env.UPSTREAM_BASE_URL || "https://openrouter.ai/api/v1";
   try {
-    const r = await fetch(`${base}/models`);
+    const r = await fetch(`${base}/models?output_modalities=all`);
     const data = await r.json();
     res.json(data);
   } catch (err) {
