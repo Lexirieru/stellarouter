@@ -14,8 +14,11 @@ const FALLBACK_MODELS = [
   "meta-llama/llama-3.1-8b-instruct",
 ];
 
+const CHAT_KEY = "stellarouter:chat";
+const APIKEY_KEY = "stellarouter:apikey";
+
 type Mode = "agent" | "human";
-type Receipt = { label: string; tx?: string };
+type Receipt = { label: string; tx?: string; model?: string };
 type Msg = { role: "user" | "assistant"; content: string; receipt?: Receipt };
 
 export function Playground() {
@@ -27,6 +30,34 @@ export function Playground() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Restore chat history + saved API key.
+  useEffect(() => {
+    try {
+      const chat = localStorage.getItem(CHAT_KEY);
+      if (chat) setMessages(JSON.parse(chat));
+    } catch {
+      // ignore corrupt history
+    }
+    const savedKey = localStorage.getItem(APIKEY_KEY);
+    if (savedKey) setApiKey(savedKey);
+  }, []);
+
+  // Persist chat history as it changes.
+  useEffect(() => {
+    localStorage.setItem(CHAT_KEY, JSON.stringify(messages));
+  }, [messages]);
+
+  function newChat() {
+    setMessages([]);
+    setError(null);
+    localStorage.removeItem(CHAT_KEY);
+  }
+
+  function changeApiKey(v: string) {
+    setApiKey(v);
+    localStorage.setItem(APIKEY_KEY, v);
+  }
 
   // Load the full model catalog + restore the model chosen on the Models page.
   useEffect(() => {
@@ -81,7 +112,7 @@ export function Playground() {
           throw new Error(data.message || data.error || `HTTP ${res.status}`);
         }
         reply = data.completion?.choices?.[0]?.message?.content ?? "(no content)";
-        receipt = { label: `paid ${data.paid} · x402` };
+        receipt = { label: `paid ${data.paid} · x402`, model: data.completion?.model };
       } else {
         const res = await fetch(`${GATEWAY}/v1/chat/completions`, {
           method: "POST",
@@ -99,7 +130,11 @@ export function Playground() {
         const [stroops, tx] =
           (res.headers.get("X-Stellarouter-Debit") || "").split(":");
         const usdc = stroops ? (Number(stroops) / 1e7).toFixed(4) : "?";
-        receipt = { label: `debited ${usdc} USDC from credit · prepaid`, tx };
+        receipt = {
+          label: `debited ${usdc} USDC from credit · prepaid`,
+          tx,
+          model: data.model,
+        };
       }
 
       setMessages([...history, { role: "assistant", content: reply, receipt }]);
@@ -114,7 +149,17 @@ export function Playground() {
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-6 py-8">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">Playground</h1>
-        <ModelSelect models={models} value={model} onChange={changeModel} />
+        <div className="flex items-center gap-2">
+          {messages.length > 0 && (
+            <button
+              onClick={newChat}
+              className="rounded-full border border-black/15 px-3 py-1.5 text-sm transition-colors hover:bg-black/[.04]"
+            >
+              New chat
+            </button>
+          )}
+          <ModelSelect models={models} value={model} onChange={changeModel} />
+        </div>
       </div>
 
       {/* Door toggle */}
@@ -138,7 +183,7 @@ export function Playground() {
       {mode === "human" && (
         <input
           value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
+          onChange={(e) => changeApiKey(e.target.value)}
           placeholder="sk-stellarouter-…  (from the Keys page)"
           className="rounded-lg border border-black/15 bg-transparent px-3 py-2 font-mono text-xs outline-none focus:border-black/40"
         />
@@ -165,6 +210,7 @@ export function Playground() {
             {m.receipt && (
               <div className="mt-1 font-mono text-[11px] text-emerald-600">
                 ✓ {m.receipt.label}
+                {m.receipt.model && ` · ${m.receipt.model}`}
                 {m.receipt.tx && (
                   <>
                     {" · "}

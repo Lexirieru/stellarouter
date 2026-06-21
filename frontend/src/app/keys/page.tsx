@@ -11,8 +11,20 @@ export default function KeysPage() {
   const { address, signTransaction } = useWallet();
   const [keys, setKeys] = useState<KeyRow[]>([]);
   const [newKey, setNewKey] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function copyKey() {
+    if (!newKey) return;
+    try {
+      await navigator.clipboard.writeText(newKey);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setError("Couldn't copy — select the key and copy manually.");
+    }
+  }
 
   const refresh = useCallback(async () => {
     if (!address) return;
@@ -93,10 +105,18 @@ export default function KeysPage() {
 
           {newKey && (
             <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4">
-              <div className="text-xs font-medium text-emerald-700">
-                New key — copy it now, it won&apos;t be shown again:
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-xs font-medium text-emerald-700">
+                  New key — copy it now, it won&apos;t be shown again:
+                </div>
+                <button
+                  onClick={() => void copyKey()}
+                  className="shrink-0 rounded-md bg-emerald-600 px-3 py-1 text-xs font-medium text-white transition-opacity hover:opacity-90"
+                >
+                  {copied ? "Copied ✓" : "Copy"}
+                </button>
               </div>
-              <code className="mt-1 block break-all font-mono text-xs">
+              <code className="mt-2 block break-all font-mono text-xs">
                 {newKey}
               </code>
             </div>
