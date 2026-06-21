@@ -6,6 +6,7 @@ import { ExactStellarScheme } from "@x402/stellar/exact/server";
 import { chatCompletion } from "./llm.js";
 import { readBalance, debit, prepaidEnabled } from "./credits.js";
 import { agentCall, demoAgentEnabled } from "./demoAgent.js";
+import { resolveKey, createKey, listKeys, revokeKey } from "./keyStore.js";
 
 // ─── Config (CAIP-2 network id drives testnet vs mainnet from one place) ─────
 const NETWORK = process.env.STELLAR_NETWORK || "stellar:testnet";
@@ -17,12 +18,6 @@ const FACILITATOR_URL =
 // Flat price in USDC stroops (7 decimals): "$0.005" → 50000.
 const PRICE_STROOPS = Math.round(parseFloat(PRICE.replace(/[^0-9.]/g, "")) * 1e7);
 
-// Human door: API key → Stellar address (in-memory; demo seed from env).
-// Production would back this with a DB; Option A debits on-chain per call.
-const API_KEYS = new Map();
-if (process.env.DEMO_API_KEY && process.env.DEMO_USER_ADDRESS) {
-  API_KEYS.set(process.env.DEMO_API_KEY, process.env.DEMO_USER_ADDRESS);
-}
 const bearer = (req) => {
   const h = req.headers.authorization || "";
   return h.startsWith("Bearer ") ? h.slice(7).trim() : null;
@@ -84,6 +79,28 @@ app.post("/demo/agent-call", async (req, res) => {
   }
 });
 
+// ─── API keys for the human (prepaid) door ───────────────────────────────────
+// Demo-grade: no address-ownership proof. Production would verify a signature.
+app.post("/keys", (req, res) => {
+  const address = req.body?.address;
+  if (typeof address !== "string" || !address.startsWith("G")) {
+    return res.status(400).json({ error: "invalid_address" });
+  }
+  res.json({ key: createKey(address) });
+});
+
+app.get("/keys", (req, res) => {
+  const address = req.query?.address;
+  if (typeof address !== "string") {
+    return res.status(400).json({ error: "missing_address" });
+  }
+  res.json({ keys: listKeys(address) });
+});
+
+app.delete("/keys/:key", (req, res) => {
+  res.json({ revoked: revokeKey(req.params.key) });
+});
+
 // ─── Free, unpaid endpoints ──────────────────────────────────────────────────
 app.get("/health", (_req, res) => res.json({ ok: true, network: NETWORK }));
 app.get("/", (_req, res) =>
@@ -108,7 +125,8 @@ app.get("/", (_req, res) =>
 // debit per call) and proxy. Otherwise fall through to the x402 agent door.
 app.post("/v1/chat/completions", async (req, res, next) => {
   const key = bearer(req);
-  if (!key || !API_KEYS.has(key)) return next(); // no key → agent door (x402)
+  const user = key ? resolveKey(key) : null;
+  if (!user) return next(); // no/unknown key → agent door (x402)
 
   if (!prepaidEnabled) {
     return res.status(503).json({
@@ -116,8 +134,6 @@ app.post("/v1/chat/completions", async (req, res, next) => {
       message: "Prepaid door not configured (CREDITS_CONTRACT_ID / GATEWAY_ADMIN_SECRET).",
     });
   }
-
-  const user = API_KEYS.get(key);
   try {
     const balance = await readBalance(user);
     if (balance < BigInt(PRICE_STROOPS)) {
