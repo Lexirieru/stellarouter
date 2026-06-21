@@ -5,6 +5,7 @@ import { HTTPFacilitatorClient } from "@x402/core/server";
 import { ExactStellarScheme } from "@x402/stellar/exact/server";
 import { chatCompletion } from "./llm.js";
 import { readBalance, debit, prepaidEnabled } from "./credits.js";
+import { agentCall, demoAgentEnabled } from "./demoAgent.js";
 
 // ─── Config (CAIP-2 network id drives testnet vs mainnet from one place) ─────
 const NETWORK = process.env.STELLAR_NETWORK || "stellar:testnet";
@@ -54,6 +55,34 @@ const resourceServer = new x402ResourceServer(facilitator).register(
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
+
+// CORS — allow the Playground UI to call the demo endpoint from the browser.
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Headers", "content-type, authorization");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+
+// Demo agent (for the Playground): pays the gateway via x402 server-side using
+// a demo wallet, then returns the completion. Real agents call /v1/... directly.
+app.post("/demo/agent-call", async (req, res) => {
+  if (!demoAgentEnabled) {
+    return res.status(503).json({
+      error: "demo_disabled",
+      message: "Set PAYER_SECRET_KEY (a USDC-funded demo wallet) to enable the agent demo.",
+    });
+  }
+  try {
+    const { status, data } = await agentCall(`http://localhost:${PORT}`, req.body);
+    res.json({ ok: status === 200, paid: PRICE, network: NETWORK, completion: data });
+  } catch (err) {
+    res
+      .status(502)
+      .json({ error: "demo_error", message: String(err?.message ?? err) });
+  }
+});
 
 // ─── Free, unpaid endpoints ──────────────────────────────────────────────────
 app.get("/health", (_req, res) => res.json({ ok: true, network: NETWORK }));
