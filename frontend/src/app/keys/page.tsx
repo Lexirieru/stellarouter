@@ -5,11 +5,11 @@ import { useWallet } from "@stellarouter/ui";
 
 const GATEWAY = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3001";
 
-const mask = (k: string) => `${k.slice(0, 18)}…${k.slice(-4)}`;
+type KeyRow = { id: string; prefix: string; createdAt: number };
 
 export default function KeysPage() {
   const { address } = useWallet();
-  const [keys, setKeys] = useState<string[]>([]);
+  const [keys, setKeys] = useState<KeyRow[]>([]);
   const [newKey, setNewKey] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,9 +50,8 @@ export default function KeysPage() {
     }
   }
 
-  async function revoke(key: string) {
-    await fetch(`${GATEWAY}/keys/${key}`, { method: "DELETE" });
-    if (newKey === key) setNewKey(null);
+  async function revoke(id: string) {
+    await fetch(`${GATEWAY}/keys/${id}`, { method: "DELETE" });
     await refresh();
   }
 
@@ -95,10 +94,10 @@ export default function KeysPage() {
               <p className="px-4 py-4 text-sm text-zinc-400">No keys yet.</p>
             )}
             {keys.map((k) => (
-              <div key={k} className="flex items-center justify-between px-4 py-3">
-                <code className="font-mono text-xs">{mask(k)}</code>
+              <div key={k.id} className="flex items-center justify-between px-4 py-3">
+                <code className="font-mono text-xs">{k.prefix}</code>
                 <button
-                  onClick={() => void revoke(k)}
+                  onClick={() => void revoke(k.id)}
                   className="text-xs text-red-600 hover:underline"
                 >
                   revoke
