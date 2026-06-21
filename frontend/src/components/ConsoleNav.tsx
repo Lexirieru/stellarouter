@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Logo } from "@stellarouter/ui";
+import { Logo, ConnectWalletButton } from "@stellarouter/ui";
 
 const NAV = [
   { href: "/", label: "Playground" },
@@ -35,6 +35,10 @@ export function ConsoleNav() {
           );
         })}
       </nav>
+
+      <div className="mt-auto">
+        <ConnectWalletButton />
+      </div>
     </aside>
   );
 }

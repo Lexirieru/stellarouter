@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { WalletProvider, CursorBubble, ConnectWalletButton } from "@stellarouter/ui";
+import { WalletProvider, CursorBubble } from "@stellarouter/ui";
 import { ConsoleNav } from "@/components/ConsoleNav";
 import "@stellarouter/ui/brand.css";
 import "@stellarouter/ui/cursor.css";
@@ -22,12 +22,7 @@ export default function RootLayout({
         <WalletProvider>
           <div className="flex min-h-screen">
             <ConsoleNav />
-            <div className="flex flex-1 flex-col">
-              <header className="flex items-center justify-end border-b border-black/10 px-6 py-3">
-                <ConnectWalletButton />
-              </header>
-              <main className="flex flex-1 flex-col">{children}</main>
-            </div>
+            <main className="flex flex-1 flex-col">{children}</main>
           </div>
         </WalletProvider>
       </body>
