@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useWallet } from "@stellarouter/ui";
 import {
   readCredit,
+  readWalletUsdc,
   buildDeposit,
   buildWithdraw,
   submit,
@@ -11,11 +12,12 @@ import {
   fromStroops,
 } from "@/lib/credits";
 
-type Busy = null | "load" | "deposit" | "withdraw";
+type Busy = null | "load" | "deposit" | "refund";
 
 export default function CreditsPage() {
   const { address, signTransaction } = useWallet();
   const [credit, setCredit] = useState<bigint | null>(null);
+  const [wallet, setWallet] = useState<number | null>(null);
   const [amount, setAmount] = useState("1");
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +28,12 @@ export default function CreditsPage() {
     setBusy("load");
     setError(null);
     try {
-      setCredit(await readCredit(address));
+      const [c, w] = await Promise.all([
+        readCredit(address),
+        readWalletUsdc(address),
+      ]);
+      setCredit(c);
+      setWallet(w);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -38,22 +45,30 @@ export default function CreditsPage() {
     void refresh();
   }, [refresh]);
 
-  async function run(kind: "deposit" | "withdraw") {
+  async function topUp() {
     if (!address) return;
     const usdc = parseFloat(amount);
     if (!(usdc > 0)) {
       setError("Enter a positive amount.");
       return;
     }
+    if (wallet !== null && usdc > wallet) {
+      setError("Amount exceeds your wallet USDC balance.");
+      return;
+    }
+    await sign("deposit", await buildDeposit(address, toStroops(usdc)));
+  }
+
+  async function refund() {
+    if (!address || !credit || credit <= BigInt(0)) return;
+    await sign("refund", await buildWithdraw(address, credit));
+  }
+
+  async function sign(kind: "deposit" | "refund", xdr: string) {
     setBusy(kind);
     setError(null);
     setTx(null);
     try {
-      const stroops = toStroops(usdc);
-      const xdr =
-        kind === "deposit"
-          ? await buildDeposit(address, stroops)
-          : await buildWithdraw(address, stroops);
       const signed = await signTransaction(xdr);
       const hash = await submit(signed);
       setTx(hash);
@@ -69,23 +84,35 @@ export default function CreditsPage() {
     <div className="mx-auto w-full max-w-xl px-6 py-8">
       <h1 className="text-2xl font-semibold tracking-tight">Credits</h1>
       <p className="mt-2 text-sm text-zinc-600">
-        Top up USDC to fund the prepaid door. Deposits and withdrawals settle
-        on-chain via your wallet.
+        Top up USDC to fund the prepaid door. Deposits settle on-chain via your
+        wallet; refunds return unused credit.
       </p>
 
       {!address ? (
         <p className="mt-8 rounded-xl border border-black/10 p-6 text-sm text-zinc-500">
-          Connect your Stellar wallet (top right) to manage credits.
+          Connect your Stellar wallet (in the sidebar) to manage credits.
         </p>
       ) : (
         <div className="mt-6 flex flex-col gap-5">
+          {/* Credit balance + refund */}
           <div className="rounded-xl border border-black/10 p-5">
-            <div className="text-xs uppercase tracking-wide text-zinc-500">
-              Credit balance
-            </div>
-            <div className="mt-1 text-3xl font-semibold">
-              {credit === null ? "—" : fromStroops(credit).toFixed(7)}{" "}
-              <span className="text-base font-normal text-zinc-500">USDC</span>
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="text-xs uppercase tracking-wide text-zinc-500">
+                  Credit balance
+                </div>
+                <div className="mt-1 text-3xl font-semibold">
+                  {credit === null ? "—" : fromStroops(credit).toFixed(7)}{" "}
+                  <span className="text-base font-normal text-zinc-500">USDC</span>
+                </div>
+              </div>
+              <button
+                onClick={() => void refund()}
+                disabled={busy !== null || !credit || credit <= BigInt(0)}
+                className="rounded-lg border border-black/20 px-3 py-1.5 text-sm font-medium transition-colors hover:bg-black/[.04] disabled:opacity-40"
+              >
+                {busy === "refund" ? "refunding…" : "Refund"}
+              </button>
             </div>
             <button
               onClick={() => void refresh()}
@@ -96,32 +123,34 @@ export default function CreditsPage() {
             </button>
           </div>
 
-          <div className="flex items-end gap-2">
-            <label className="flex flex-1 flex-col gap-1">
-              <span className="text-xs text-zinc-500">Amount (USDC)</span>
-              <input
-                type="number"
-                min="0"
-                step="0.1"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="rounded-lg border border-black/15 bg-transparent px-3 py-2 text-sm outline-none focus:border-black/40"
-              />
-            </label>
-            <button
-              onClick={() => void run("deposit")}
-              disabled={busy !== null}
-              className="rounded-lg bg-[var(--color-darkblue)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-            >
-              {busy === "deposit" ? "topping up…" : "Top up"}
-            </button>
-            <button
-              onClick={() => void run("withdraw")}
-              disabled={busy !== null}
-              className="rounded-lg border border-black/20 px-4 py-2 text-sm font-medium transition-colors hover:bg-black/[.04] disabled:opacity-50"
-            >
-              {busy === "withdraw" ? "withdrawing…" : "Withdraw"}
-            </button>
+          {/* Top up */}
+          <div className="rounded-xl border border-black/10 p-5">
+            <div className="flex items-center justify-between text-xs text-zinc-500">
+              <span>Top up from wallet</span>
+              <span>
+                {wallet === null ? "—" : wallet.toFixed(4)} USDC available
+              </span>
+            </div>
+            <div className="mt-3 flex items-end gap-2">
+              <label className="flex flex-1 flex-col gap-1">
+                <span className="text-xs text-zinc-500">Amount (USDC)</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="rounded-lg border border-black/15 bg-transparent px-3 py-2 text-sm outline-none focus:border-black/40"
+                />
+              </label>
+              <button
+                onClick={() => void topUp()}
+                disabled={busy !== null}
+                className="rounded-lg bg-[var(--color-darkblue)] px-5 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              >
+                {busy === "deposit" ? "topping up…" : "Top up"}
+              </button>
+            </div>
           </div>
 
           {tx && (

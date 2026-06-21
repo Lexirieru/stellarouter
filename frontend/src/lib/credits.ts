@@ -22,6 +22,27 @@ const SCALE = 10 ** USDC_DECIMALS;
 export const toStroops = (usdc: number): bigint => BigInt(Math.round(usdc * SCALE));
 export const fromStroops = (stroops: bigint): number => Number(stroops) / SCALE;
 
+const HORIZON_URL =
+  process.env.NEXT_PUBLIC_STELLAR_HORIZON_URL || stellarConfig.horizonUrl;
+const USDC_ISSUER =
+  process.env.NEXT_PUBLIC_USDC_ISSUER ||
+  "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
+
+/** Read the USDC balance held in the user's wallet (classic balance). */
+export async function readWalletUsdc(address: string): Promise<number> {
+  const res = await fetch(`${HORIZON_URL}/accounts/${address}`);
+  if (!res.ok) {
+    if (res.status === 404) return 0; // account not funded yet
+    throw new Error(`horizon ${res.status}`);
+  }
+  const data = await res.json();
+  const bal = (data.balances ?? []).find(
+    (b: { asset_code?: string; asset_issuer?: string; balance: string }) =>
+      b.asset_code === "USDC" && b.asset_issuer === USDC_ISSUER
+  );
+  return bal ? Number(bal.balance) : 0;
+}
+
 /** Read a user's on-chain credit balance (stroops). */
 export async function readCredit(user: string): Promise<bigint> {
   const src = await server.getAccount(user);
