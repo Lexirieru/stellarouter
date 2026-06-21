@@ -133,7 +133,7 @@ export default function CreditsPage() {
                   Credit balance
                 </div>
                 <div className="mt-1 text-3xl font-semibold">
-                  {credit === null ? "—" : fromStroops(credit).toFixed(7)}{" "}
+                  {credit === null ? "—" : fromStroops(credit).toFixed(3)}{" "}
                   <span className="text-base font-normal text-zinc-500">USDC</span>
                 </div>
               </div>
@@ -159,7 +159,7 @@ export default function CreditsPage() {
             <div className="flex items-center justify-between text-xs text-zinc-500">
               <span>Top up from wallet</span>
               <span>
-                {wallet === null ? "—" : wallet.toFixed(4)} USDC available
+                {wallet === null ? "—" : wallet.toFixed(3)} USDC available
               </span>
             </div>
             {!trustline && (
