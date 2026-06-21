@@ -184,8 +184,17 @@ app.get("/", (_req, res) =>
 // debit per call) and proxy. Otherwise fall through to the x402 agent door.
 app.post("/v1/chat/completions", async (req, res, next) => {
   const key = bearer(req);
-  const user = key ? resolveKey(key) : null;
-  if (!user) return next(); // no/unknown key → agent door (x402)
+  if (!key) return next(); // no key → agent door (x402)
+
+  const user = resolveKey(key);
+  if (!user) {
+    // A key was provided but isn't ours — the caller wants the human door,
+    // so return a clear error instead of silently falling through to x402.
+    return res.status(401).json({
+      error: "invalid_api_key",
+      message: "Unknown API key — create one on the Keys page (copy it fully).",
+    });
+  }
 
   if (!prepaidEnabled) {
     return res.status(503).json({
