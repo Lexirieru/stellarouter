@@ -1,10 +1,146 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { useWallet } from "@stellarouter/ui";
+import {
+  readCredit,
+  buildDeposit,
+  buildWithdraw,
+  submit,
+  toStroops,
+  fromStroops,
+} from "@/lib/credits";
+
+type Busy = null | "load" | "deposit" | "withdraw";
+
 export default function CreditsPage() {
+  const { address, signTransaction } = useWallet();
+  const [credit, setCredit] = useState<bigint | null>(null);
+  const [amount, setAmount] = useState("1");
+  const [busy, setBusy] = useState<Busy>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [tx, setTx] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    if (!address) return;
+    setBusy("load");
+    setError(null);
+    try {
+      setCredit(await readCredit(address));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
+    }
+  }, [address]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  async function run(kind: "deposit" | "withdraw") {
+    if (!address) return;
+    const usdc = parseFloat(amount);
+    if (!(usdc > 0)) {
+      setError("Enter a positive amount.");
+      return;
+    }
+    setBusy(kind);
+    setError(null);
+    setTx(null);
+    try {
+      const stroops = toStroops(usdc);
+      const xdr =
+        kind === "deposit"
+          ? await buildDeposit(address, stroops)
+          : await buildWithdraw(address, stroops);
+      const signed = await signTransaction(xdr);
+      const hash = await submit(signed);
+      setTx(hash);
+      await refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
-    <div className="mx-auto w-full max-w-2xl px-6 py-8">
+    <div className="mx-auto w-full max-w-xl px-6 py-8">
       <h1 className="text-2xl font-semibold tracking-tight">Credits</h1>
-      <p className="mt-2 text-sm text-zinc-500">
-        Top up USDC to fund the prepaid (human) door. Coming up next.
+      <p className="mt-2 text-sm text-zinc-600">
+        Top up USDC to fund the prepaid door. Deposits and withdrawals settle
+        on-chain via your wallet.
       </p>
+
+      {!address ? (
+        <p className="mt-8 rounded-xl border border-black/10 p-6 text-sm text-zinc-500">
+          Connect your Stellar wallet (top right) to manage credits.
+        </p>
+      ) : (
+        <div className="mt-6 flex flex-col gap-5">
+          <div className="rounded-xl border border-black/10 p-5">
+            <div className="text-xs uppercase tracking-wide text-zinc-500">
+              Credit balance
+            </div>
+            <div className="mt-1 text-3xl font-semibold">
+              {credit === null ? "—" : fromStroops(credit).toFixed(7)}{" "}
+              <span className="text-base font-normal text-zinc-500">USDC</span>
+            </div>
+            <button
+              onClick={() => void refresh()}
+              disabled={busy !== null}
+              className="mt-2 text-xs text-[var(--color-darkblue)] hover:underline disabled:opacity-50"
+            >
+              {busy === "load" ? "refreshing…" : "refresh"}
+            </button>
+          </div>
+
+          <div className="flex items-end gap-2">
+            <label className="flex flex-1 flex-col gap-1">
+              <span className="text-xs text-zinc-500">Amount (USDC)</span>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="rounded-lg border border-black/15 bg-transparent px-3 py-2 text-sm outline-none focus:border-black/40"
+              />
+            </label>
+            <button
+              onClick={() => void run("deposit")}
+              disabled={busy !== null}
+              className="rounded-lg bg-[var(--color-darkblue)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {busy === "deposit" ? "topping up…" : "Top up"}
+            </button>
+            <button
+              onClick={() => void run("withdraw")}
+              disabled={busy !== null}
+              className="rounded-lg border border-black/20 px-4 py-2 text-sm font-medium transition-colors hover:bg-black/[.04] disabled:opacity-50"
+            >
+              {busy === "withdraw" ? "withdrawing…" : "Withdraw"}
+            </button>
+          </div>
+
+          {tx && (
+            <a
+              href={`https://stellar.expert/explorer/testnet/tx/${tx}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-mono text-xs text-emerald-600 hover:underline"
+            >
+              ✓ settled — {tx.slice(0, 12)}… (view on explorer)
+            </a>
+          )}
+          {error && (
+            <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-600">
+              {error}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
