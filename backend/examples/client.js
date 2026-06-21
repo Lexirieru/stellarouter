@@ -32,7 +32,7 @@ const res = await fetchWithPayment(`${GATEWAY}/v1/chat/completions`, {
   method: "POST",
   headers: { "content-type": "application/json" },
   body: JSON.stringify({
-    model: "gpt-4o-mini",
+    model: "openai/gpt-4o-mini",
     messages: [{ role: "user", content: "Hello from an AI agent paying in USDC!" }],
   }),
 });
