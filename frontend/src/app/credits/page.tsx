@@ -4,20 +4,23 @@ import { useCallback, useEffect, useState } from "react";
 import { useWallet } from "@stellarouter/ui";
 import {
   readCredit,
-  readWalletUsdc,
+  walletUsdcInfo,
   buildDeposit,
   buildWithdraw,
+  buildAddTrustline,
   submit,
+  submitClassic,
   toStroops,
   fromStroops,
 } from "@/lib/credits";
 
-type Busy = null | "load" | "deposit" | "refund";
+type Busy = null | "load" | "deposit" | "refund" | "trustline";
 
 export default function CreditsPage() {
   const { address, signTransaction } = useWallet();
   const [credit, setCredit] = useState<bigint | null>(null);
   const [wallet, setWallet] = useState<number | null>(null);
+  const [trustline, setTrustline] = useState(true);
   const [amount, setAmount] = useState("1");
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState<string | null>(null);
@@ -30,10 +33,11 @@ export default function CreditsPage() {
     try {
       const [c, w] = await Promise.all([
         readCredit(address),
-        readWalletUsdc(address),
+        walletUsdcInfo(address),
       ]);
       setCredit(c);
-      setWallet(w);
+      setWallet(w.balance);
+      setTrustline(w.trustline);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -62,6 +66,24 @@ export default function CreditsPage() {
   async function refund() {
     if (!address || !credit || credit <= BigInt(0)) return;
     await sign("refund", await buildWithdraw(address, credit));
+  }
+
+  async function addTrustline() {
+    if (!address) return;
+    setBusy("trustline");
+    setError(null);
+    setTx(null);
+    try {
+      const xdr = await buildAddTrustline(address);
+      const signed = await signTransaction(xdr);
+      const hash = await submitClassic(signed);
+      setTx(hash);
+      await refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function sign(kind: "deposit" | "refund", xdr: string) {
@@ -94,6 +116,24 @@ export default function CreditsPage() {
         </p>
       ) : (
         <div className="mt-6 flex flex-col gap-5">
+          {!trustline && (
+            <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4">
+              <div className="text-sm font-medium text-amber-700">
+                Your wallet has no USDC trustline yet.
+              </div>
+              <p className="mt-1 text-xs text-zinc-600">
+                Add it to receive USDC and top up credit.
+              </p>
+              <button
+                onClick={() => void addTrustline()}
+                disabled={busy !== null}
+                className="mt-2 rounded-lg bg-[var(--color-darkblue)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              >
+                {busy === "trustline" ? "adding…" : "Add USDC trustline"}
+              </button>
+            </div>
+          )}
+
           {/* Credit balance + refund */}
           <div className="rounded-xl border border-black/10 p-5">
             <div className="flex items-start justify-between">
@@ -145,7 +185,7 @@ export default function CreditsPage() {
               </label>
               <button
                 onClick={() => void topUp()}
-                disabled={busy !== null}
+                disabled={busy !== null || !trustline}
                 className="rounded-lg bg-[var(--color-darkblue)] px-5 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 {busy === "deposit" ? "topping up…" : "Top up"}

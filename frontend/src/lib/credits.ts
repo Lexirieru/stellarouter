@@ -28,19 +28,42 @@ const USDC_ISSUER =
   process.env.NEXT_PUBLIC_USDC_ISSUER ||
   "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
 
-/** Read the USDC balance held in the user's wallet (classic balance). */
-export async function readWalletUsdc(address: string): Promise<number> {
+const horizon = new S.Horizon.Server(HORIZON_URL);
+
+/** Whether the wallet has a USDC trustline, and its balance. */
+export async function walletUsdcInfo(
+  address: string
+): Promise<{ trustline: boolean; balance: number }> {
   const res = await fetch(`${HORIZON_URL}/accounts/${address}`);
-  if (!res.ok) {
-    if (res.status === 404) return 0; // account not funded yet
-    throw new Error(`horizon ${res.status}`);
-  }
+  if (!res.ok) return { trustline: false, balance: 0 };
   const data = await res.json();
   const bal = (data.balances ?? []).find(
     (b: { asset_code?: string; asset_issuer?: string; balance: string }) =>
       b.asset_code === "USDC" && b.asset_issuer === USDC_ISSUER
   );
-  return bal ? Number(bal.balance) : 0;
+  return { trustline: !!bal, balance: bal ? Number(bal.balance) : 0 };
+}
+
+/** Build a classic changeTrust tx to add the USDC trustline. */
+export async function buildAddTrustline(user: string): Promise<string> {
+  const src = await server.getAccount(user);
+  const tx = new S.TransactionBuilder(src, {
+    fee: S.BASE_FEE,
+    networkPassphrase: PASSPHRASE,
+  })
+    .addOperation(
+      S.Operation.changeTrust({ asset: new S.Asset("USDC", USDC_ISSUER) })
+    )
+    .setTimeout(120)
+    .build();
+  return tx.toXDR();
+}
+
+/** Submit a signed classic tx via Horizon; returns the tx hash. */
+export async function submitClassic(signedXdr: string): Promise<string> {
+  const tx = S.TransactionBuilder.fromXDR(signedXdr, PASSPHRASE);
+  const res = await horizon.submitTransaction(tx);
+  return res.hash;
 }
 
 /** Read a user's on-chain credit balance (stroops). */
