@@ -172,11 +172,12 @@ export default function CreditsPage() {
               <label className="flex flex-1 flex-col gap-1">
                 <span className="text-xs text-zinc-500">Amount (USDC)</span>
                 <input
-                  type="number"
-                  min="0"
-                  step="0.1"
+                  type="text"
+                  inputMode="decimal"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={(e) =>
+                    setAmount(e.target.value.replace(/[^0-9.]/g, ""))
+                  }
                   className="rounded-lg border border-black/15 bg-transparent px-3 py-2 text-sm outline-none focus:border-black/40"
                 />
               </label>
