@@ -55,7 +55,8 @@ app.use(express.json({ limit: "1mb" }));
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Headers", "content-type, authorization");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Expose-Headers", "X-Stellarouter-Debit");
   if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
 });
