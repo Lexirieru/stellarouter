@@ -16,7 +16,7 @@ import {
   getNetwork,
   signTransaction,
 } from "@stellar/freighter-api";
-import { stellarConfig } from "@/lib/stellar";
+import { stellarConfig } from "./stellar";
 
 type WalletContextValue = {
   address: string | null;

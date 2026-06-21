@@ -1,3 +1,10 @@
+# Dependencies (workspace + per-app)
+node_modules/
+
+# Build output
+.next/
+dist/
+
 # Reference material (design inspiration, not part of the product)
 references/
 

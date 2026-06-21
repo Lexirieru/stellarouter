@@ -1,0 +1,9 @@
+{
+  "name": "stellarouter",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "landing-page",
+    "packages/*"
+  ]
+}
