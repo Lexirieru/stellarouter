@@ -102,6 +102,20 @@ app.delete("/keys/:key", (req, res) => {
   res.json({ revoked: revokeKey(req.params.key) });
 });
 
+// Model catalog — proxies the upstream (OpenRouter) models list for the UI.
+app.get("/models", async (_req, res) => {
+  const base = process.env.UPSTREAM_BASE_URL || "https://openrouter.ai/api/v1";
+  try {
+    const r = await fetch(`${base}/models`);
+    const data = await r.json();
+    res.json(data);
+  } catch (err) {
+    res
+      .status(502)
+      .json({ error: "models_error", message: String(err?.message ?? err) });
+  }
+});
+
 // ─── Free, unpaid endpoints ──────────────────────────────────────────────────
 app.get("/health", (_req, res) => res.json({ ok: true, network: NETWORK }));
 app.get("/", (_req, res) =>

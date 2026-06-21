@@ -6,6 +6,7 @@ import { Logo, ConnectWalletButton } from "@stellarouter/ui";
 
 const NAV = [
   { href: "/", label: "Playground" },
+  { href: "/models", label: "Models" },
   { href: "/credits", label: "Credits" },
   { href: "/keys", label: "API Keys" },
 ];
