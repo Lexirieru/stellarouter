@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { WalletProvider } from "@stellarouter/ui";
+import { WalletProvider, CursorBubble } from "@stellarouter/ui";
 import "@stellarouter/ui/brand.css";
+import "@stellarouter/ui/cursor.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,6 +17,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
+        <CursorBubble />
         <WalletProvider>{children}</WalletProvider>
       </body>
     </html>
