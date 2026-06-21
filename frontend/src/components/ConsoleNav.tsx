@@ -9,6 +9,7 @@ const NAV = [
   { href: "/models", label: "Models" },
   { href: "/credits", label: "Credits" },
   { href: "/keys", label: "API Keys" },
+  { href: "/logs", label: "Logs" },
 ];
 
 export function ConsoleNav() {

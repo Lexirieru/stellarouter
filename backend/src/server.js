@@ -8,6 +8,28 @@ import { readBalance, debit, prepaidEnabled } from "./credits.js";
 import { agentCall, demoAgentEnabled } from "./demoAgent.js";
 import { resolveKey, createKey, listKeys, revokeKey } from "./keyStore.js";
 import { buildChallenge, verifyChallenge } from "./auth.js";
+import { logUsage, listLogs } from "./logStore.js";
+
+// Record one completion to the usage log (never throws into the request path).
+function recordUsage(completion, startedAt, mode, label) {
+  const u = completion?.usage ?? {};
+  const completionTokens = u.completion_tokens ?? 0;
+  const seconds = Math.max(0.001, (Date.now() - startedAt) / 1000);
+  logUsage({
+    ts: Date.now(),
+    model: completion?.model,
+    provider: completion?.provider,
+    promptTokens: u.prompt_tokens ?? 0,
+    completionTokens,
+    cost: typeof u.cost === "number" ? u.cost : null,
+    mode,
+    label,
+    speed: completionTokens / seconds,
+    finishReason: completion?.choices?.[0]?.finish_reason,
+  });
+}
+
+const maskKey = (k) => (k ? `${k.slice(0, 12)}…${k.slice(-4)}` : null);
 
 // ─── Config (CAIP-2 network id drives testnet vs mainnet from one place) ─────
 const NETWORK = process.env.STELLAR_NETWORK || "stellar:testnet";
@@ -135,6 +157,9 @@ app.get("/models", async (_req, res) => {
   }
 });
 
+// Usage logs (demo: global; production would scope per account).
+app.get("/logs", (_req, res) => res.json({ logs: listLogs(100) }));
+
 // ─── Free, unpaid endpoints ──────────────────────────────────────────────────
 app.get("/health", (_req, res) => res.json({ ok: true, network: NETWORK }));
 app.get("/", (_req, res) =>
@@ -177,7 +202,9 @@ app.post("/v1/chat/completions", async (req, res, next) => {
       });
     }
 
+    const t0 = Date.now();
     const completion = await chatCompletion(req.body);
+    recordUsage(completion, t0, "prepaid", maskKey(key));
 
     // Settle on-chain (Option A). Charge only after a successful completion.
     const txHash = await debit(user, PRICE_STROOPS);
@@ -214,7 +241,9 @@ app.use(
 // ─── Paid handler: proxy to the upstream model (or mock if none configured) ──
 app.post("/v1/chat/completions", async (req, res) => {
   try {
+    const t0 = Date.now();
     const completion = await chatCompletion(req.body);
+    recordUsage(completion, t0, "x402", "x402");
     res.json(completion);
   } catch (err) {
     res
