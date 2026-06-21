@@ -120,14 +120,15 @@ app.get("/keys/challenge", (req, res) => {
 });
 
 app.post("/keys", (req, res) => {
-  const { address, signedXdr } = req.body ?? {};
+  const { address, signedXdr, name } = req.body ?? {};
   if (typeof address !== "string" || !address.startsWith("G")) {
     return res.status(400).json({ error: "invalid_address" });
   }
   if (typeof signedXdr !== "string" || !verifyChallenge(address, signedXdr)) {
     return res.status(401).json({ error: "ownership_proof_failed" });
   }
-  res.json({ key: createKey(address) });
+  const label = typeof name === "string" ? name.trim().slice(0, 60) : "";
+  res.json({ key: createKey(address, label || null) });
 });
 
 app.get("/keys", (req, res) => {

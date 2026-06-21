@@ -18,27 +18,34 @@ db.exec(`
     hash       TEXT PRIMARY KEY,
     address    TEXT NOT NULL,
     prefix     TEXT NOT NULL,
+    name       TEXT,
     created_at INTEGER NOT NULL
   );
   CREATE INDEX IF NOT EXISTS idx_api_keys_address ON api_keys(address);
 `);
+// Migrate older DBs that predate the `name` column.
+try {
+  db.exec("ALTER TABLE api_keys ADD COLUMN name TEXT");
+} catch {
+  // column already exists
+}
 
 const hashKey = (key) => createHash("sha256").update(key, "utf8").digest("hex");
 const mask = (key) => `${key.slice(0, 18)}…${key.slice(-4)}`;
 
 const insertStmt = db.prepare(
-  "INSERT OR IGNORE INTO api_keys (hash, address, prefix, created_at) VALUES (?, ?, ?, ?)"
+  "INSERT OR IGNORE INTO api_keys (hash, address, prefix, name, created_at) VALUES (?, ?, ?, ?, ?)"
 );
 
 // Seed the demo key (hashed) so the Playground works out of the box.
 if (process.env.DEMO_API_KEY && process.env.DEMO_USER_ADDRESS) {
   const key = process.env.DEMO_API_KEY;
-  insertStmt.run(hashKey(key), process.env.DEMO_USER_ADDRESS, mask(key), Date.now());
+  insertStmt.run(hashKey(key), process.env.DEMO_USER_ADDRESS, mask(key), "demo", Date.now());
 }
 
-export function createKey(address) {
+export function createKey(address, name) {
   const key = "sk-stellarouter-" + randomBytes(24).toString("hex");
-  insertStmt.run(hashKey(key), address, mask(key), Date.now());
+  insertStmt.run(hashKey(key), address, mask(key), name || null, Date.now());
   return key; // full key — shown once, never stored in plaintext
 }
 
@@ -52,7 +59,7 @@ export function resolveKey(key) {
 export function listKeys(address) {
   return db
     .prepare(
-      "SELECT hash AS id, prefix, created_at AS createdAt FROM api_keys WHERE address = ? ORDER BY created_at DESC"
+      "SELECT hash AS id, prefix, name, created_at AS createdAt FROM api_keys WHERE address = ? ORDER BY created_at DESC"
     )
     .all(address);
 }
