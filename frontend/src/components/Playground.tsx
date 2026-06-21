@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SegmentedToggle } from "./SegmentedToggle";
 import { ModelSelect } from "./ModelSelect";
 
 const GATEWAY = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3001";
+const MODEL_KEY = "stellarouter:model";
 
-const MODELS = [
+const FALLBACK_MODELS = [
   "openai/gpt-4o-mini",
   "openai/gpt-4o",
   "anthropic/claude-3.5-sonnet",
@@ -20,11 +21,33 @@ type Msg = { role: "user" | "assistant"; content: string; receipt?: Receipt };
 export function Playground() {
   const [mode, setMode] = useState<Mode>("agent");
   const [apiKey, setApiKey] = useState("");
-  const [model, setModel] = useState(MODELS[0]);
+  const [models, setModels] = useState<string[]>(FALLBACK_MODELS);
+  const [model, setModel] = useState(FALLBACK_MODELS[0]);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Msg[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Load the full model catalog + restore the model chosen on the Models page.
+  useEffect(() => {
+    const saved = localStorage.getItem(MODEL_KEY);
+    if (saved) setModel(saved);
+    (async () => {
+      try {
+        const r = await fetch(`${GATEWAY}/models`);
+        const d = await r.json();
+        const ids: string[] = (d.data ?? []).map((m: { id: string }) => m.id);
+        if (ids.length) setModels(ids);
+      } catch {
+        // keep fallback
+      }
+    })();
+  }, []);
+
+  function changeModel(m: string) {
+    setModel(m);
+    localStorage.setItem(MODEL_KEY, m);
+  }
 
   async function run() {
     if (!input.trim() || loading) return;
@@ -91,7 +114,7 @@ export function Playground() {
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-6 py-8">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">Playground</h1>
-        <ModelSelect models={MODELS} value={model} onChange={setModel} />
+        <ModelSelect models={models} value={model} onChange={changeModel} />
       </div>
 
       {/* Door toggle */}

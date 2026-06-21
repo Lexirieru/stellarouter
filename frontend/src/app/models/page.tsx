@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ModelSelect } from "@/components/ModelSelect";
 
 const GATEWAY = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3001";
+const MODEL_KEY = "stellarouter:model";
 const PAGE_SIZE = 12;
 
 type Model = {
@@ -35,6 +37,7 @@ const ctx = (n?: number) => {
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export default function ModelsPage() {
+  const router = useRouter();
   const [models, setModels] = useState<Model[]>([]);
   const [q, setQ] = useState("");
   const [tab, setTab] = useState("all");
@@ -103,6 +106,11 @@ export default function ModelsPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  function useInPlayground(id: string) {
+    localStorage.setItem(MODEL_KEY, id);
+    router.push("/");
+  }
+
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-8">
       <div className="flex items-baseline justify-between gap-4">
@@ -165,10 +173,18 @@ export default function ModelsPage() {
                 {m.description}
               </p>
             )}
-            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500">
-              <span>{ctx(m.context_length)} context</span>
-              <span>{perM(m.pricing?.prompt)} in</span>
-              <span>{perM(m.pricing?.completion)} out</span>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500">
+                <span>{ctx(m.context_length)} context</span>
+                <span>{perM(m.pricing?.prompt)} in</span>
+                <span>{perM(m.pricing?.completion)} out</span>
+              </div>
+              <button
+                onClick={() => useInPlayground(m.id)}
+                className="shrink-0 rounded-full bg-[var(--color-darkblue)] px-3 py-1 text-xs font-medium text-white transition-opacity hover:opacity-90"
+              >
+                Use in Playground
+              </button>
             </div>
           </div>
         ))}
