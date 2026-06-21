@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { gsap } from 'gsap';
+import { Logo } from '@stellarouter/ui';
 import { WIGGLE_CONFIG } from '@/lib/data';
 
 function initWiggle(element, intensity) {
@@ -338,7 +339,7 @@ export default function Navbar() {
                     </div>
                 </div>
                 <div className="nav-center" style={{ cursor: "url('/assets/Cursor SVG/cursor-pointer.svg') 12 12, pointer" }}>
-                    <svg className="logo-stellarouter" viewBox="0 0 560 90" fill="none" xmlns="http://www.w3.org/2000/svg"><text x="280" y="66" textAnchor="middle" textLength="552" lengthAdjust="spacingAndGlyphs" fontFamily="'Epilogue', sans-serif" fontWeight="800" fontSize="72" letterSpacing="-3" fill="currentColor">stellarouter</text></svg>
+                    <Logo className="logo-stellarouter" />
                 </div>
                 <div className="nav-right" style={{ cursor: "url('/assets/Cursor SVG/cursor-pointer.svg') 12 12, pointer" }}>
                     <div className="nav-hover-trigger">
