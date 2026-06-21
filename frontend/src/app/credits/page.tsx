@@ -73,11 +73,7 @@ export default function CreditsPage() {
       const info = await walletUsdcInfo(address);
       setWallet(info.balance);
       if (info.balance < usdc) {
-        setError(
-          info.balance === 0
-            ? "USDC enabled ✓ — your wallet has 0 USDC. Receive some, then top up."
-            : `Amount exceeds your wallet USDC balance (${info.balance}).`
-        );
+        setError("Not enough USDC in your wallet.");
         return;
       }
 
