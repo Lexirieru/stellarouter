@@ -96,8 +96,8 @@ export function Playground() {
             <div
               className={`inline-block max-w-md whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm ${
                 m.role === "user"
-                  ? "bg-foreground text-background"
-                  : "bg-black/[.05] dark:bg-white/[.08]"
+                  ? "bg-[var(--color-darkblue)] text-white"
+                  : "bg-black/[.05]"
               }`}
             >
               {m.content}
@@ -137,7 +137,7 @@ export function Playground() {
         <button
           onClick={run}
           disabled={loading || !input.trim()}
-          className="rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background transition-colors hover:opacity-90 disabled:opacity-50"
+          className="rounded-full bg-[var(--color-darkblue)] px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           Send
         </button>
