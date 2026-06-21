@@ -8,7 +8,7 @@ const GATEWAY = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3001";
 type KeyRow = { id: string; prefix: string; createdAt: number };
 
 export default function KeysPage() {
-  const { address } = useWallet();
+  const { address, signTransaction } = useWallet();
   const [keys, setKeys] = useState<KeyRow[]>([]);
   const [newKey, setNewKey] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -34,10 +34,17 @@ export default function KeysPage() {
     setBusy(true);
     setError(null);
     try {
+      // 1. Fetch a challenge tx for this address.
+      const cr = await fetch(`${GATEWAY}/keys/challenge?address=${address}`);
+      const cd = await cr.json();
+      if (cd.error) throw new Error(cd.error);
+      // 2. Prove ownership by signing it with the wallet.
+      const signedXdr = await signTransaction(cd.challenge);
+      // 3. Exchange the signed challenge for a key.
       const r = await fetch(`${GATEWAY}/keys`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ address }),
+        body: JSON.stringify({ address, signedXdr }),
       });
       const d = await r.json();
       if (d.error) throw new Error(d.error);
@@ -70,13 +77,19 @@ export default function KeysPage() {
         </p>
       ) : (
         <div className="mt-6 flex flex-col gap-5">
-          <button
-            onClick={() => void create()}
-            disabled={busy}
-            className="self-start rounded-lg bg-[var(--color-darkblue)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
-            {busy ? "creating…" : "Create key"}
-          </button>
+          <div className="flex flex-col gap-1">
+            <button
+              onClick={() => void create()}
+              disabled={busy}
+              className="self-start rounded-lg bg-[var(--color-darkblue)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {busy ? "sign in wallet…" : "Create key"}
+            </button>
+            <span className="text-[11px] text-zinc-500">
+              You&apos;ll sign a free challenge in your wallet to prove you own
+              this address (no fee, not submitted).
+            </span>
+          </div>
 
           {newKey && (
             <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4">

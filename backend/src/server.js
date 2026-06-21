@@ -7,6 +7,7 @@ import { chatCompletion } from "./llm.js";
 import { readBalance, debit, prepaidEnabled } from "./credits.js";
 import { agentCall, demoAgentEnabled } from "./demoAgent.js";
 import { resolveKey, createKey, listKeys, revokeKey } from "./keyStore.js";
+import { buildChallenge, verifyChallenge } from "./auth.js";
 
 // ─── Config (CAIP-2 network id drives testnet vs mainnet from one place) ─────
 const NETWORK = process.env.STELLAR_NETWORK || "stellar:testnet";
@@ -81,11 +82,28 @@ app.post("/demo/agent-call", async (req, res) => {
 });
 
 // ─── API keys for the human (prepaid) door ───────────────────────────────────
-// Demo-grade: no address-ownership proof. Production would verify a signature.
-app.post("/keys", (req, res) => {
-  const address = req.body?.address;
+// Ownership proof: client fetches a challenge tx, signs it with their wallet,
+// and posts it back. We only issue a key if the signature proves control of the
+// address (so nobody can mint keys against someone else's on-chain credit).
+app.get("/keys/challenge", (req, res) => {
+  const address = req.query?.address;
   if (typeof address !== "string" || !address.startsWith("G")) {
     return res.status(400).json({ error: "invalid_address" });
+  }
+  try {
+    res.json({ challenge: buildChallenge(address) });
+  } catch {
+    return res.status(400).json({ error: "invalid_address" });
+  }
+});
+
+app.post("/keys", (req, res) => {
+  const { address, signedXdr } = req.body ?? {};
+  if (typeof address !== "string" || !address.startsWith("G")) {
+    return res.status(400).json({ error: "invalid_address" });
+  }
+  if (typeof signedXdr !== "string" || !verifyChallenge(address, signedXdr)) {
+    return res.status(401).json({ error: "ownership_proof_failed" });
   }
   res.json({ key: createKey(address) });
 });
