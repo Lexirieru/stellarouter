@@ -131,7 +131,7 @@ export default function KeysPage() {
             className="w-full rounded-full border border-black/15 bg-transparent px-4 py-2.5 text-sm outline-none focus:border-black/40"
           />
 
-          <div className="overflow-hidden rounded-xl border border-black/10">
+          <div className="overflow-x-auto rounded-xl border border-black/10">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-black/10 text-left text-xs uppercase tracking-wide text-zinc-500">
