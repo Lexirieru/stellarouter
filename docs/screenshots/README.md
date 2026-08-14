@@ -9,3 +9,11 @@ File yang dibutuhkan README root (nama harus persis):
 | `playground.png` | Halaman **Playground** — toggle agent/human terlihat. |
 
 Tips: jendela ~1280px lebar, light mode, crop rapi tanpa bookmark bar.
+
+File Level 3 (sudah tergenerate otomatis via Playwright):
+
+| File | Isi |
+|---|---|
+| `mobile-playground.png` / `mobile-credits.png` | UI mobile 390×844 (checklist "mobile responsive UI") |
+| `ci-pipeline.png` | Halaman GitHub Actions dengan pipeline hijau (di-capture setelah push) |
+

@@ -31,13 +31,14 @@ disiapkan sekarang supaya begitu unlock tinggal submit).
 
 ## Minggu 3–4 Agustus (18–24) — Level 3
 
-- [ ] CI/CD GitHub Actions: `cargo test` + build wasm + lint/build frontend (screenshot pipeline hijau)
-- [ ] Deploy live: frontend → Vercel, gateway → Railway/Render/Fly
-- [ ] Test frontend (kontrak sudah 9 unit test Rust — screenshot 3+ passing)
-- [ ] Audit mobile responsive + screenshot
-- [ ] Demo video 1–2 menit (Playground x402 + top-up credits + event feed live)
-- [ ] Inter-contract call: sudah ada (credits → USDC SAC via `token::Client`); opsional diperkuat
-- [ ] **Submit ide Level 4** (lihat bawah) — kejar approval secepatnya
+- [x] CI/CD GitHub Actions: `ci.yml` (cargo test + wasm + lint/test/build frontend + boot check gateway) + `deploy-contract.yml` (deploy testnet sekali-klik)
+- [x] Deploy live frontend → **GitHub Pages** (static export): https://lexirieru.github.io/stellarouter/
+- [ ] Host gateway (Railway free plan penuh — butuh keputusan user: upgrade Railway / `fly auth login` / Render)
+- [x] Test frontend: 16 unit test bun (errors, stroops, parseEvent) + 9 test kontrak
+- [x] Mobile responsive (top bar + nav scroll) + screenshot 390px
+- [x] Demo video 1:05 — `docs/demo/stellarouter-demo.mp4`
+- [x] Inter-contract call: sudah ada (credits → USDC SAC via `token::Client`)
+- [ ] **Submit ide Level 4** — draft siap di [L4-IDEA.md](./L4-IDEA.md), tinggal user submit
 
 ## Minggu 4–5 Agustus (25–31) — Materi Level 4 & 5 (submit begitu unlock)
 

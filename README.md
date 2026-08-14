@@ -1,5 +1,8 @@
 # Stellarouter
 
+[![CI](https://github.com/Lexirieru/stellarouter/actions/workflows/ci.yml/badge.svg)](https://github.com/Lexirieru/stellarouter/actions/workflows/ci.yml)
+[![Deploy console](https://github.com/Lexirieru/stellarouter/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/Lexirieru/stellarouter/actions/workflows/deploy-pages.yml)
+
 > **OpenRouter with verifiable billing** — an LLM gateway where AI agents pay
 > per-call in USDC via **x402** (zero XLM needed), and humans top up a prepaid
 > credit balance that lives **on-chain** in a Soroban contract: transparent,
@@ -137,6 +140,26 @@ Every failure in the console is classified and shown with a category chip:
 | **Wrong network** | wallet on PUBLIC while the app targets TESTNET |
 | **Transaction failed** | submit/poll failures, with the raw reason |
 
+## Testing & CI
+
+- **Contract**: 9 Rust unit tests (`cargo test -p credits`) — auth on every
+  privileged path, balance/treasury invariants, full lifecycle.
+- **Frontend**: 16 unit tests (`bun test src`) — stroop conversion, the error
+  taxonomy (incl. `Error(Contract, #N)` parsing and wallet-kit error
+  normalization), and `getEvents` topic parsing against real `ScVal`s.
+- **CI** ([ci.yml](.github/workflows/ci.yml)): contract tests + wasm build,
+  frontend lint/test/build, gateway boot check — on every push.
+- **Contract deployment workflow**
+  ([deploy-contract.yml](.github/workflows/deploy-contract.yml)): one-click
+  testnet deploy from the Actions tab (set the `STELLAR_DEPLOYER_SECRET` repo
+  secret once); the new contract id lands in the job summary.
+
+## Demo video
+
+▶ **[1-minute demo](docs/demo/stellarouter-demo.mp4)** — a real x402-paid chat
+($0.005, receipt on screen), the multi-wallet modal, live on-chain credits
+feed, the 500+ model catalog, and usage logs.
+
 ## Screenshots
 
 | | |
@@ -144,14 +167,21 @@ Every failure in the console is classified and shown with a category chip:
 | Wallet options (Stellar Wallets Kit) | ![wallet options](docs/screenshots/wallet-options.png) |
 | Credits — on-chain balance + live activity feed | ![credits](docs/screenshots/credits-live-feed.png) |
 | Playground (agent x402 / human prepaid) | ![playground](docs/screenshots/playground.png) |
+| Mobile (390px) | ![mobile playground](docs/screenshots/mobile-playground.png) ![mobile credits](docs/screenshots/mobile-credits.png) |
 
 > Regenerate: run the app, connect a wallet, and capture — see
 > [docs/screenshots/README.md](docs/screenshots/README.md).
 
 ## Live demo
 
-_Deploy target: Vercel (console) + Railway (gateway) — link will land here as
-part of Level 3._
+**Console:** <https://lexirieru.github.io/stellarouter/> (auto-deployed from
+`main` by [deploy-pages.yml](.github/workflows/deploy-pages.yml)).
+
+Pages that read the chain directly (Credits balance + live activity feed,
+wallet connect) are fully live. The Playground/Models/Logs pages talk to the
+gateway: point the build at a hosted gateway by setting the `GATEWAY_URL`
+repository variable (`gh variable set GATEWAY_URL --body "https://…"`), or run
+it locally (`cd backend && npm start`).
 
 ## License
 
