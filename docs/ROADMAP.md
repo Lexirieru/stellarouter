@@ -21,12 +21,12 @@ disiapkan sekarang supaya begitu unlock tinggal submit).
 
 - [x] Kontrak `credits` deployed testnet: `CAEFFQAL6SGQF6OV5BOBE23NAC2T7WXOUUE5XRDOH2KRN2HXRMDXA7RE`
 - [x] Kontrak dipanggil dari frontend (read `balance` via simulate, write `deposit`/`withdraw`)
-- [ ] **StellarWalletsKit** — multi-wallet picker (Freighter, xBull, Albedo, Hana, dll)
-- [ ] **Status transaksi** pending → success/fail + tx hash (link stellar.expert)
-- [ ] **3+ error types**: wallet not found · user rejected · insufficient balance · network mismatch
-- [ ] **Event listening real-time**: poll `getEvents` RPC → activity feed + auto-refresh saldo
-- [ ] **Simulasi user**: script generate wallet (friendbot → trustline → USDC → deposit → debit)
-- [ ] **Root README** — setup, screenshot wallet options, alamat kontrak, tx hash verifiable
+- [x] **StellarWalletsKit** — multi-wallet picker (Freighter, xBull, Albedo, Hana, dll)
+- [x] **Status transaksi** signing → submitting → pending → success/fail + tx hash (link stellar.expert)
+- [x] **5 error types**: wallet not found · user rejected · insufficient balance · network mismatch · tx failed
+- [x] **Event listening real-time**: poll `getEvents` RPC → activity feed + auto-refresh saldo
+- [x] **Simulasi user**: `backend/scripts/simulate-users.js` — 3 user, 16 tx nyata (14 Agu)
+- [x] **Root README** — setup, alamat kontrak, tx hash verifiable (screenshot: tinggal capture, lihat docs/screenshots/README.md)
 - [x] 10+ meaningful commits (sudah 39+)
 
 ## Minggu 3–4 Agustus (18–24) — Level 3
