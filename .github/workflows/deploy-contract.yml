@@ -1,0 +1,56 @@
+name: Deploy contract (testnet)
+
+# Workflow deployment kontrak — dijalankan manual dari tab Actions.
+# Prasyarat sekali saja: `gh secret set STELLAR_DEPLOYER_SECRET` (S... key
+# akun deployer testnet). Hasil deploy (contract id) muncul di job summary.
+
+on:
+  workflow_dispatch:
+    inputs:
+      admin:
+        description: "Admin address (G...) — default: deployer account"
+        required: false
+        default: "GDYS2IMCFRSBIR2DDJV2E6TLEQI5A45SEBICIIXUDIAQIOC5IRUR7UTC"
+      token:
+        description: "Token SAC address (default: USDC Circle testnet)"
+        required: false
+        default: "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: smart-contract
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32v1-none
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: smart-contract
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-binstall
+      - name: Install Stellar CLI
+        run: cargo binstall -y stellar-cli
+      - name: Build optimized wasm
+        run: stellar contract build
+      - name: Deploy to testnet
+        env:
+          STELLAR_DEPLOYER_SECRET: ${{ secrets.STELLAR_DEPLOYER_SECRET }}
+        run: |
+          test -n "$STELLAR_DEPLOYER_SECRET" || { echo "::error::Set repo secret STELLAR_DEPLOYER_SECRET first (gh secret set STELLAR_DEPLOYER_SECRET)"; exit 1; }
+          CONTRACT_ID=$(stellar contract deploy \
+            --wasm target/wasm32v1-none/release/credits.wasm \
+            --source-account "$STELLAR_DEPLOYER_SECRET" \
+            --network testnet \
+            -- \
+            --admin '${{ inputs.admin }}' \
+            --token '${{ inputs.token }}')
+          echo "### ✅ credits deployed (testnet)" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`$CONTRACT_ID\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "https://stellar.expert/explorer/testnet/contract/$CONTRACT_ID" >> "$GITHUB_STEP_SUMMARY"

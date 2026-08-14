@@ -24,7 +24,7 @@ const EVENT_TYPES = new Set(["deposit", "debit", "withdraw", "collect"]);
 // Backfill awal (~1 jam ledger @5s) — cukup untuk mengisi feed pertama kali.
 const INITIAL_BACKFILL_LEDGERS = 720;
 
-function parseEvent(ev: {
+export function parseEvent(ev: {
   id: string;
   ledger: number;
   ledgerClosedAt?: string;

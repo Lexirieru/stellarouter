@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "bun test src"
   },
   "dependencies": {
     "@stellar/stellar-sdk": "^16.0.1",

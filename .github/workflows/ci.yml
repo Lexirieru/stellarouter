@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  contract:
+    name: Contract — cargo test + wasm build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: smart-contract
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32v1-none
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: smart-contract
+      - name: Unit tests (9 tests)
+        run: cargo test -p credits
+      - name: Build contract wasm
+        run: cargo build -p credits --target wasm32v1-none --release
+
+  frontend:
+    name: Frontend — lint + tests + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Install workspace deps
+        run: bun install --frozen-lockfile
+      - name: Lint
+        run: bun run lint
+        working-directory: frontend
+      - name: Unit tests
+        run: bun test src
+        working-directory: frontend
+      - name: Build console
+        run: bun run build
+        working-directory: frontend
+
+  gateway:
+    name: Gateway — install + boot check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Server boots and refuses to run without OZ_API_KEY
+        run: |
+          set +e
+          node src/server.js > boot.log 2>&1
+          code=$?
+          set -e
+          cat boot.log
+          # tanpa OZ_API_KEY server harus exit non-zero dengan pesan jelas
+          test $code -ne 0 && grep -qi "OZ_API_KEY" boot.log
