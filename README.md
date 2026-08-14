@@ -1,7 +1,7 @@
 # Stellarouter
 
 [![CI](https://github.com/Lexirieru/stellarouter/actions/workflows/ci.yml/badge.svg)](https://github.com/Lexirieru/stellarouter/actions/workflows/ci.yml)
-[![Deploy console](https://github.com/Lexirieru/stellarouter/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/Lexirieru/stellarouter/actions/workflows/deploy-pages.yml)
+[![Live demo](https://img.shields.io/badge/live%20demo-stellarouter.vercel.app-black)](https://stellarouter.vercel.app)
 
 > **OpenRouter with verifiable billing** — an LLM gateway where AI agents pay
 > per-call in USDC via **x402** (zero XLM needed), and humans top up a prepaid
@@ -175,16 +175,17 @@ feed, the 500+ model catalog, and usage logs.
 
 ## Live demo
 
-**Console:** <https://lexirieru.github.io/stellarouter/> — a static export of
-the console served from the `gh-pages` branch;
-[deploy-pages.yml](.github/workflows/deploy-pages.yml) automates the same
-build on every push to `main`.
+**Console:** <https://stellarouter.vercel.app> — static export deployed to
+Vercel:
+
+```bash
+cd frontend && STATIC_EXPORT=1 bun run build && cd out && vercel deploy --prod
+```
 
 Pages that read the chain directly (Credits balance + live activity feed,
 wallet connect) are fully live. The Playground/Models/Logs pages talk to the
-gateway: point the build at a hosted gateway by setting the `GATEWAY_URL`
-repository variable (`gh variable set GATEWAY_URL --body "https://…"`), or run
-it locally (`cd backend && npm start`).
+gateway: set `NEXT_PUBLIC_GATEWAY_URL=https://…` at build time once the
+gateway is hosted, or run it locally (`cd backend && npm start`).
 
 ## License
 

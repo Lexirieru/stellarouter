@@ -32,7 +32,7 @@ disiapkan sekarang supaya begitu unlock tinggal submit).
 ## Minggu 3–4 Agustus (18–24) — Level 3
 
 - [x] CI/CD GitHub Actions: `ci.yml` (cargo test + wasm + lint/test/build frontend + boot check gateway) + `deploy-contract.yml` (deploy testnet sekali-klik)
-- [x] Deploy live frontend → **GitHub Pages** (static export, branch `gh-pages`): https://lexirieru.github.io/stellarouter/
+- [x] Deploy live frontend → **Vercel** (static export): https://stellarouter.vercel.app (GitHub Pages dimatikan atas permintaan)
 - [ ] Host gateway (Railway free plan penuh — butuh keputusan user: upgrade Railway / `fly auth login` / Render)
 - [ ] Screenshot CI hijau — **terblokir billing lock GitHub Actions** ("account is locked due to a billing issue"): buka github.com/settings/billing, selesaikan, lalu `gh run rerun --repo Lexirieru/stellarouter <run-id>`
 - [x] Test frontend: 16 unit test bun (errors, stroops, parseEvent) + 9 test kontrak
