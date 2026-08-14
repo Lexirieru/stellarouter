@@ -7,11 +7,20 @@ const UPSTREAM_API_KEY = process.env.UPSTREAM_API_KEY;
 // Some upstreams namespace models by provider (e.g. 9router expects
 // "openrouter/openai/gpt-4o-mini"). Prepend this prefix when set.
 const MODEL_PREFIX = process.env.UPSTREAM_MODEL_PREFIX || "";
+// x402 charges a flat price per call, so the completion size must be bounded
+// or a single call could cost more than it earns. Callers can still pass
+// their own (smaller or larger) max_tokens explicitly.
+const DEFAULT_MAX_TOKENS = Number(process.env.UPSTREAM_MAX_TOKENS || 512);
 
 function applyPrefix(body) {
-  if (!MODEL_PREFIX || typeof body?.model !== "string") return body;
-  if (body.model.startsWith(MODEL_PREFIX)) return body;
-  return { ...body, model: MODEL_PREFIX + body.model };
+  let out = body;
+  if (MODEL_PREFIX && typeof out?.model === "string" && !out.model.startsWith(MODEL_PREFIX)) {
+    out = { ...out, model: MODEL_PREFIX + out.model };
+  }
+  if (out?.max_tokens == null) {
+    out = { ...out, max_tokens: DEFAULT_MAX_TOKENS };
+  }
+  return out;
 }
 
 export async function chatCompletion(body) {

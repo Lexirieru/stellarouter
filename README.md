@@ -142,7 +142,7 @@ Every failure in the console is classified and shown with a category chip:
 | | |
 |---|---|
 | Wallet options (Stellar Wallets Kit) | ![wallet options](docs/screenshots/wallet-options.png) |
-| Credits — tx status + live activity feed | ![credits](docs/screenshots/credits-live-feed.png) |
+| Credits — on-chain balance + live activity feed | ![credits](docs/screenshots/credits-live-feed.png) |
 | Playground (agent x402 / human prepaid) | ![playground](docs/screenshots/playground.png) |
 
 > Regenerate: run the app, connect a wallet, and capture — see
