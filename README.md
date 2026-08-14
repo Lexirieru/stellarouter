@@ -168,14 +168,17 @@ feed, the 500+ model catalog, and usage logs.
 | Credits — on-chain balance + live activity feed | ![credits](docs/screenshots/credits-live-feed.png) |
 | Playground (agent x402 / human prepaid) | ![playground](docs/screenshots/playground.png) |
 | Mobile (390px) | ![mobile playground](docs/screenshots/mobile-playground.png) ![mobile credits](docs/screenshots/mobile-credits.png) |
+| Tests — 9 contract + 16 frontend, all passing | ![tests](docs/screenshots/tests-passing.png) |
 
 > Regenerate: run the app, connect a wallet, and capture — see
 > [docs/screenshots/README.md](docs/screenshots/README.md).
 
 ## Live demo
 
-**Console:** <https://lexirieru.github.io/stellarouter/> (auto-deployed from
-`main` by [deploy-pages.yml](.github/workflows/deploy-pages.yml)).
+**Console:** <https://lexirieru.github.io/stellarouter/> — a static export of
+the console served from the `gh-pages` branch;
+[deploy-pages.yml](.github/workflows/deploy-pages.yml) automates the same
+build on every push to `main`.
 
 Pages that read the chain directly (Credits balance + live activity feed,
 wallet connect) are fully live. The Playground/Models/Logs pages talk to the
