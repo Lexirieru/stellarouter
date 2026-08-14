@@ -16,6 +16,10 @@ const PASSPHRASE = stellarConfig.networkPassphrase;
 const server = new S.rpc.Server(RPC_URL);
 const contract = new S.Contract(CONTRACT_ID);
 
+// Dipakai lintas-modul (event feed, dsb.)
+export const CREDITS_CONTRACT_ID = CONTRACT_ID;
+export const rpcServer = server;
+
 export const USDC_DECIMALS = 7;
 const SCALE = 10 ** USDC_DECIMALS;
 
@@ -59,11 +63,30 @@ export async function buildAddTrustline(user: string): Promise<string> {
   return tx.toXDR();
 }
 
+// ─── Transaction status tracking ─────────────────────────────────────────────
+// Setiap submit melaporkan fase ke UI: submitting → pending → success/failed.
+export type TxPhase = "submitting" | "pending" | "success" | "failed";
+export type TxUpdate = { phase: TxPhase; hash?: string; error?: string };
+export type OnTxUpdate = (u: TxUpdate) => void;
+
 /** Submit a signed classic tx via Horizon; returns the tx hash. */
-export async function submitClassic(signedXdr: string): Promise<string> {
+export async function submitClassic(
+  signedXdr: string,
+  onUpdate?: OnTxUpdate
+): Promise<string> {
   const tx = S.TransactionBuilder.fromXDR(signedXdr, PASSPHRASE);
-  const res = await horizon.submitTransaction(tx);
-  return res.hash;
+  onUpdate?.({ phase: "submitting" });
+  try {
+    const res = await horizon.submitTransaction(tx);
+    onUpdate?.({ phase: "success", hash: res.hash });
+    return res.hash;
+  } catch (e) {
+    onUpdate?.({
+      phase: "failed",
+      error: e instanceof Error ? e.message : String(e),
+    });
+    throw e;
+  }
 }
 
 /** Read a user's on-chain credit balance (stroops). */
@@ -119,19 +142,37 @@ export function buildWithdraw(user: string, stroops: bigint): Promise<string> {
 }
 
 /** Submit a signed XDR and wait for the result; returns the tx hash. */
-export async function submit(signedXdr: string): Promise<string> {
+export async function submit(
+  signedXdr: string,
+  onUpdate?: OnTxUpdate
+): Promise<string> {
   const tx = S.TransactionBuilder.fromXDR(signedXdr, PASSPHRASE);
+  onUpdate?.({ phase: "submitting" });
   const sent = await server.sendTransaction(tx);
   if (sent.status === "ERROR") {
-    throw new Error(`submit error: ${JSON.stringify(sent.errorResult)}`);
+    const error = `submit error: ${JSON.stringify(sent.errorResult)}`;
+    onUpdate?.({ phase: "failed", error });
+    throw new Error(error);
   }
+  onUpdate?.({ phase: "pending", hash: sent.hash });
   let res = await server.getTransaction(sent.hash);
   const t0 = Date.now();
   while (res.status === "NOT_FOUND") {
-    if (Date.now() - t0 > 30_000) throw new Error("transaction poll timeout");
+    if (Date.now() - t0 > 30_000) {
+      onUpdate?.({ phase: "failed", hash: sent.hash, error: "poll timeout" });
+      throw new Error("transaction poll timeout");
+    }
     await new Promise((r) => setTimeout(r, 1500));
     res = await server.getTransaction(sent.hash);
   }
-  if (res.status !== "SUCCESS") throw new Error(`transaction ${res.status}`);
+  if (res.status !== "SUCCESS") {
+    onUpdate?.({
+      phase: "failed",
+      hash: sent.hash,
+      error: `transaction ${res.status}`,
+    });
+    throw new Error(`transaction ${res.status}`);
+  }
+  onUpdate?.({ phase: "success", hash: sent.hash });
   return sent.hash;
 }
