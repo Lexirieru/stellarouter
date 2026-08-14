@@ -1,7 +1,7 @@
 // Client-side Soroban helpers for the `credits` contract. Reads the on-chain
 // credit balance and builds deposit/withdraw transactions for the connected
-// wallet to sign (via Freighter). The user is the tx source, so the envelope
-// signature satisfies the contract's require_auth(user).
+// wallet to sign (any wallet via StellarWalletsKit). The user is the tx source,
+// so the envelope signature satisfies the contract's require_auth(user).
 
 import * as S from "@stellar/stellar-sdk";
 import { stellarConfig } from "@stellarouter/ui";

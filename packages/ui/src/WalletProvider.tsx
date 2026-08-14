@@ -8,24 +8,26 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import {
-  isConnected,
-  isAllowed,
-  getAddress,
-  requestAccess,
-  getNetwork,
-  signTransaction,
-} from "@stellar/freighter-api";
 import { stellarConfig } from "./stellar";
+import {
+  assertNetwork,
+  getKit,
+  toWalletError,
+  WalletError,
+} from "./walletKit";
 
 type WalletContextValue = {
   address: string | null;
   /** Nama jaringan yang aktif di wallet (mis. "TESTNET", "PUBLIC"). */
   network: string | null;
+  /** Id wallet yang dipilih user di modal (mis. "freighter", "xbull"). */
+  walletId: string | null;
   connecting: boolean;
+  /** Error koneksi terakhir (sudah dinormalisasi) — null saat sukses. */
+  connectError: WalletError | null;
   connect: () => Promise<void>;
-  disconnect: () => void;
-  /** Tanda tangani XDR dengan Freighter; mengembalikan signed XDR. */
+  disconnect: () => Promise<void>;
+  /** Tanda tangani XDR dengan wallet terpilih; mengembalikan signed XDR. */
   signTransaction: (xdr: string) => Promise<string>;
 };
 
@@ -34,62 +36,74 @@ const WalletContext = createContext<WalletContextValue | undefined>(undefined);
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [address, setAddress] = useState<string | null>(null);
   const [network, setNetwork] = useState<string | null>(null);
+  const [walletId, setWalletId] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const [connectError, setConnectError] = useState<WalletError | null>(null);
 
-  // Pulihkan sesi bila Freighter terpasang & app sudah pernah diizinkan
-  // (tanpa memunculkan prompt).
+  // Pulihkan sesi: kit menyimpan wallet + address terakhir di localStorage,
+  // jadi getAddress() setelah init mengembalikan sesi sebelumnya tanpa prompt.
   useEffect(() => {
     (async () => {
-      const { isConnected: installed } = await isConnected();
-      if (!installed) return;
-
-      const { isAllowed: allowed } = await isAllowed();
-      if (!allowed) return;
-
-      const { address: addr, error } = await getAddress();
-      if (error || !addr) return;
-      setAddress(addr);
-
-      const { network: net } = await getNetwork();
-      setNetwork(net);
+      try {
+        const kit = await getKit();
+        const { address: addr } = await kit.getAddress();
+        if (!addr) return;
+        setAddress(addr);
+        setWalletId(kit.selectedModule?.productId ?? null);
+        setNetwork(await assertNetwork(kit).catch(() => null));
+      } catch {
+        // Tidak ada sesi tersimpan / wallet tak tersedia — tetap disconnected.
+      }
     })();
   }, []);
 
   const connect = useCallback(async () => {
     setConnecting(true);
+    setConnectError(null);
     try {
-      const { isConnected: installed } = await isConnected();
-      if (!installed) {
-        window.open("https://www.freighter.app/", "_blank", "noopener");
-        throw new Error("Freighter extension is not installed");
-      }
-
-      const { address: addr, error } = await requestAccess();
-      if (error) throw new Error(error.message);
+      const kit = await getKit();
+      // authModal() membuka picker multi-wallet (Freighter, xBull, Albedo,
+      // Lobstr, Hana, …), set module aktif, lalu mengembalikan address.
+      const { address: addr } = await kit.authModal();
+      const net = await assertNetwork(kit); // NETWORK_MISMATCH bila beda jaringan
       setAddress(addr);
-
-      const { network: net } = await getNetwork();
+      setWalletId(kit.selectedModule?.productId ?? null);
       setNetwork(net);
+    } catch (e) {
+      const err = toWalletError(e);
+      setConnectError(err);
+      throw err;
     } finally {
       setConnecting(false);
     }
   }, []);
 
-  const disconnect = useCallback(() => {
-    // Freighter tidak punya API "disconnect"; kita cukup lupakan state lokal.
+  const disconnect = useCallback(async () => {
+    try {
+      const kit = await getKit();
+      await kit.disconnect();
+    } catch {
+      // Kit belum sempat init — cukup reset state lokal.
+    }
     setAddress(null);
     setNetwork(null);
+    setWalletId(null);
+    setConnectError(null);
   }, []);
 
   const sign = useCallback(
     async (xdr: string) => {
-      if (!address) throw new Error("Wallet not connected");
-      const { signedTxXdr, error } = await signTransaction(xdr, {
-        networkPassphrase: stellarConfig.networkPassphrase,
-        address,
-      });
-      if (error) throw new Error(error.message);
-      return signedTxXdr;
+      if (!address) throw new WalletError("NOT_CONNECTED", "Wallet not connected");
+      try {
+        const kit = await getKit();
+        const { signedTxXdr } = await kit.signTransaction(xdr, {
+          networkPassphrase: stellarConfig.networkPassphrase,
+          address,
+        });
+        return signedTxXdr;
+      } catch (e) {
+        throw toWalletError(e);
+      }
     },
     [address]
   );
@@ -99,7 +113,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       value={{
         address,
         network,
+        walletId,
         connecting,
+        connectError,
         connect,
         disconnect,
         signTransaction: sign,

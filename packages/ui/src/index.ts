@@ -5,3 +5,5 @@ export { Logo } from "./Logo";
 export { CursorBubble } from "./CursorBubble";
 export { STELLAR_NETWORK, stellarConfig } from "./stellar";
 export type { StellarNetwork } from "./stellar";
+export { WalletError, toWalletError, walletErrorMessage } from "./walletKit";
+export type { WalletErrorCode } from "./walletKit";
