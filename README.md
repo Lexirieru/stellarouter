@@ -83,7 +83,7 @@ bun install
 # 2. Backend gateway
 cd backend
 bun install
-cp .env.example .env       # isi OZ_API_KEY (https://channels.openzeppelin.com/testnet/gen)
+cp .env.example .env       # set OZ_API_KEY (https://channels.openzeppelin.com/testnet/gen)
 npm start                  # → http://localhost:3001
 
 # 3. Frontend console (new terminal, repo root)

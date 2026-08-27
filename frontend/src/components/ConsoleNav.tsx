@@ -12,8 +12,8 @@ const NAV = [
   { href: "/logs", label: "Logs" },
 ];
 
-// Mobile (<md): top bar — logo + wallet di baris pertama, nav scroll horizontal.
-// Desktop (md+): sidebar tetap seperti semula.
+// Mobile (<md): top bar — logo + wallet on the first row, horizontally scrolling nav.
+// Desktop (md+): the sidebar as before.
 export function ConsoleNav() {
   const pathname = usePathname();
   return (

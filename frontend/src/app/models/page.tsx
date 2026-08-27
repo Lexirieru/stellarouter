@@ -16,7 +16,7 @@ type Model = {
   created?: number;
   pricing?: { prompt?: string; completion?: string };
   architecture?: { output_modalities?: string[] };
-  /** Dari gateway: false = hanya tersedia di mainnet (testnet pakai model gratis). */
+  /** From the gateway: false = mainnet only (testnet uses free models). */
   enabled?: boolean;
   availability?: "now" | "mainnet";
 };
@@ -98,7 +98,7 @@ export default function ModelsPage() {
       return inTab && inSearch;
     });
     list = [...list].sort((a, b) => {
-      // Model yang aktif di jaringan ini selalu di atas, apa pun urutannya.
+      // Models enabled on this network always come first, whatever the sort.
       const en = Number(b.enabled !== false) - Number(a.enabled !== false);
       if (en !== 0) return en;
       if (sort === SORTS[1]) {

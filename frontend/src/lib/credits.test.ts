@@ -8,7 +8,7 @@ describe("USDC stroop conversion (7 decimals)", () => {
 
   test("toStroops converts whole and fractional USDC", () => {
     expect(toStroops(1)).toBe(10_000_000n);
-    expect(toStroops(0.005)).toBe(50_000n); // harga x402 per call
+    expect(toStroops(0.005)).toBe(50_000n); // the x402 price per call
     expect(toStroops(3)).toBe(30_000_000n);
   });
 

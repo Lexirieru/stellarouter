@@ -1,8 +1,9 @@
 name: Deploy contract (testnet)
 
-# Workflow deployment kontrak — dijalankan manual dari tab Actions.
-# Prasyarat sekali saja: `gh secret set STELLAR_DEPLOYER_SECRET` (S... key
-# akun deployer testnet). Hasil deploy (contract id) muncul di job summary.
+# Contract deployment workflow — run manually from the Actions tab.
+# One-time prerequisite: `gh secret set STELLAR_DEPLOYER_SECRET` (the S... key
+# of the testnet deployer account). The deploy result (contract id) is written
+# to the job summary.
 
 on:
   workflow_dispatch:

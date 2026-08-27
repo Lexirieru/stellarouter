@@ -42,7 +42,7 @@ describe("parseEvent (credits contract events)", () => {
         id: "x",
         ledger: 1,
         txHash: "ab",
-        topic: [S.nativeToScVal("deposit", { type: "symbol" })], // < 2 topik
+        topic: [S.nativeToScVal("deposit", { type: "symbol" })], // fewer than 2 topics
         value: S.nativeToScVal(1n, { type: "i128" }),
       })
     ).toBeNull();

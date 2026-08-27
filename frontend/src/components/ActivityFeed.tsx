@@ -1,7 +1,7 @@
 "use client";
 
-// Feed aktivitas on-chain real-time untuk kontrak credits.
-// Poll RPC getEvents tiap beberapa detik; event baru muncul di atas.
+// Real-time on-chain activity feed for the credits contract.
+// Polls RPC getEvents every few seconds; new events appear at the top.
 
 import { useEffect, useRef, useState } from "react";
 import { fromStroops } from "@/lib/credits";
@@ -37,9 +37,9 @@ export function ActivityFeed({
   address,
   onUserActivity,
 }: {
-  /** Alamat wallet yang sedang terhubung (untuk highlight + auto-refresh). */
+  /** The connected wallet address (for highlighting + auto-refresh). */
   address: string | null;
-  /** Dipanggil saat event baru menyangkut `address` (mis. debit oleh gateway). */
+  /** Called when a new event involves `address` (e.g. a debit by the gateway). */
   onUserActivity?: () => void;
 }) {
   const [events, setEvents] = useState<CreditEvent[]>([]);
@@ -73,8 +73,8 @@ export function ActivityFeed({
               .sort((a, b) => (a.id < b.id ? 1 : -1))
               .slice(0, MAX_ROWS)
           );
-          // Refresh saldo bila ada aktivitas menyangkut wallet yang terhubung
-          // (kecuali batch backfill pertama — itu histori, bukan kejadian baru).
+          // Refresh the balance when activity involves the connected wallet
+          // (except for the initial backfill batch — that's history, not news).
           if (
             !firstLoad &&
             addressRef.current &&

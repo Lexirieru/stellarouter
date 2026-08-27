@@ -1,5 +1,5 @@
-// Klasifikasi error untuk UI — setiap kegagalan diberi `kind` yang stabil
-// sehingga halaman bisa menampilkan chip kategori + pesan yang manusiawi.
+// Error classification for the UI — every failure gets a stable `kind` so pages
+// can show a category chip + a human-friendly message.
 
 import { WalletError, walletErrorMessage } from "@stellarouter/ui";
 
@@ -26,7 +26,7 @@ export function errorLabel(kind: UiErrorKind): string {
   return KIND_LABEL[kind];
 }
 
-// Kode error kontrak `credits` (lihat smart-contract/contracts/credits/src/lib.rs).
+// `credits` contract error codes (see smart-contract/contracts/credits/src/lib.rs).
 const CONTRACT_ERRORS: Record<string, string> = {
   "#1": "Invalid amount (must be positive).",
   "#2": "Insufficient credit balance in the contract.",
@@ -51,7 +51,7 @@ export function describeError(e: unknown): UiError {
   }
   const message = e instanceof Error ? e.message : String(e);
 
-  // Error kontrak dari simulasi: "... Error(Contract, #2) ..."
+  // Contract error surfaced by simulation: "... Error(Contract, #2) ..."
   const contractErr = message.match(/Error\(Contract, (#\d+)\)/);
   if (contractErr && CONTRACT_ERRORS[contractErr[1]]) {
     const friendly = CONTRACT_ERRORS[contractErr[1]];

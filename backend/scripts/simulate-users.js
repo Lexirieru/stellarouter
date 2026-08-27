@@ -1,17 +1,17 @@
-// Simulasi user Stellarouter di testnet — menghidupkan kontrak `credits`
-// dengan aktivitas nyata dari banyak wallet:
+// Stellarouter user simulation on testnet — brings the `credits` contract to
+// life with real activity from many wallets:
 //
-//   1. Generate N wallet user (friendbot → XLM)
+//   1. Generate N user wallets (friendbot → XLM)
 //   2. changeTrust USDC per wallet
-//   3. Danai USDC dari funder (auto-beli di DEX testnet pakai XLM bila kurang)
-//   4. deposit() ke kontrak credits (ditandatangani user)
-//   5. debit() acak oleh admin (mensimulasikan pemakaian API)
-//   6. (opsional) withdraw sisa kredit untuk satu user
+//   3. Fund USDC from the funder (auto-buys on the testnet DEX with XLM if short)
+//   4. deposit() into the credits contract (signed by the user)
+//   5. Random debit() by the admin (simulates API usage)
+//   6. (optional) withdraw the remaining credit for one user
 //
-// Semua tx hash dicetak — pakai untuk README/submission. Wallet tersimpan di
-// scripts/.sim-wallets.json (gitignored) agar bisa dipakai ulang.
+// Every tx hash is printed — use them for the README/submission. Wallets are
+// saved to scripts/.sim-wallets.json (gitignored) so they can be reused.
 //
-// Jalankan dari backend/:  node scripts/simulate-users.js [--users 3] [--debits 2] [--fund 3] [--withdraw]
+// Run from backend/:  node scripts/simulate-users.js [--users 3] [--debits 2] [--fund 3] [--withdraw]
 
 import "dotenv/config";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
@@ -33,10 +33,10 @@ const horizon = new S.Horizon.Server(HORIZON_URL);
 const rpc = new S.rpc.Server(RPC_URL);
 const contract = new S.Contract(CONTRACT_ID);
 
-// Admin kontrak (= gateway). Debit ditandatangani key ini.
+// Contract admin (= the gateway). Debits are signed with this key.
 const ADMIN_SECRET = process.env.GATEWAY_ADMIN_SECRET;
 if (!ADMIN_SECRET) {
-  console.error("GATEWAY_ADMIN_SECRET kosong di backend/.env — dibutuhkan untuk debit().");
+  console.error("GATEWAY_ADMIN_SECRET is empty in backend/.env — required for debit().");
   process.exit(1);
 }
 const admin = S.Keypair.fromSecret(ADMIN_SECRET);
@@ -60,7 +60,7 @@ const rand = (lo, hi) => lo + Math.random() * (hi - lo);
 async function classicTx(sourceKp, ops) {
   const acc = await horizon.loadAccount(sourceKp.publicKey());
   const b = new S.TransactionBuilder(acc, {
-    fee: (Number(S.BASE_FEE) * 10).toString(), // fee headroom biar tidak antri
+    fee: (Number(S.BASE_FEE) * 10).toString(), // fee headroom so we don't queue
     networkPassphrase: PASSPHRASE,
   });
   ops.forEach((op) => b.addOperation(op));
@@ -100,7 +100,7 @@ async function invoke(sourceKp, method, ...args) {
 const addr = (g) => S.Address.fromString(g).toScVal();
 const i128 = (v) => S.nativeToScVal(v, { type: "i128" });
 
-// ── Funder: pastikan punya cukup USDC (beli di DEX testnet bila kurang) ────
+// ── Funder: make sure it holds enough USDC (buy on the testnet DEX if short) ──
 async function ensureFunderUsdc(needed) {
   const acc = await horizon.loadAccount(admin.publicKey());
   const bal = acc.balances.find(
@@ -108,11 +108,11 @@ async function ensureFunderUsdc(needed) {
   );
   const have = bal ? Number(bal.balance) : 0;
   if (have >= needed) {
-    console.log(`funder: ${have.toFixed(3)} USDC — cukup`);
+    console.log(`funder: ${have.toFixed(3)} USDC — enough`);
     return null;
   }
   const buy = Math.ceil(needed - have + 1);
-  console.log(`funder: ${have.toFixed(3)} USDC — beli ${buy} USDC di DEX (bayar XLM)…`);
+  console.log(`funder: ${have.toFixed(3)} USDC — buying ${buy} USDC on the DEX (paying XLM)…`);
   const hash = await classicTx(admin, [
     S.Operation.pathPaymentStrictReceive({
       sendAsset: S.Asset.native(),
@@ -122,7 +122,7 @@ async function ensureFunderUsdc(needed) {
       destAmount: buy.toFixed(7),
     }),
   ]);
-  console.log(`  ✓ beli USDC — tx ${hash}`);
+  console.log(`  ✓ bought USDC — tx ${hash}`);
   return hash;
 }
 
@@ -133,8 +133,8 @@ const record = (kind, user, hash, extra = {}) => {
   console.log(`  ✓ ${kind}${extra.amount ? ` ${extra.amount} USDC` : ""} — tx ${hash}`);
 };
 
-console.log(`Simulasi: ${N_USERS} user × deposit ${FUND_USDC} USDC × ${N_DEBITS} debit`);
-console.log(`Kontrak : ${CONTRACT_ID}`);
+console.log(`Simulation: ${N_USERS} users × deposit ${FUND_USDC} USDC × ${N_DEBITS} debits`);
+console.log(`Contract: ${CONTRACT_ID}`);
 console.log(`Admin   : ${admin.publicKey()}\n`);
 
 await ensureFunderUsdc(N_USERS * FUND_USDC);
@@ -145,9 +145,9 @@ for (let i = 0; i < N_USERS; i++) {
   users.push(kp);
   console.log(`\nuser[${i}] ${kp.publicKey()}`);
 
-  // 1) friendbot — akun baru dengan XLM
+  // 1) friendbot — new account funded with XLM
   const fb = await fetch(`${FRIENDBOT}?addr=${kp.publicKey()}`);
-  if (!fb.ok) throw new Error(`friendbot gagal: ${fb.status}`);
+  if (!fb.ok) throw new Error(`friendbot failed: ${fb.status}`);
   console.log("  ✓ friendbot (XLM funded)");
 
   // 2) trustline USDC
@@ -157,7 +157,7 @@ for (let i = 0; i < N_USERS; i++) {
     await classicTx(kp, [S.Operation.changeTrust({ asset: USDC })])
   );
 
-  // 3) danai USDC dari funder
+  // 3) fund USDC from the funder
   record(
     "fund-usdc",
     kp.publicKey(),
@@ -171,7 +171,7 @@ for (let i = 0; i < N_USERS; i++) {
     { amount: FUND_USDC.toFixed(3) }
   );
 
-  // 4) deposit ke kontrak (user tanda tangan sendiri)
+  // 4) deposit into the contract (signed by the user)
   const dep = stroops(FUND_USDC);
   record(
     "deposit",
@@ -183,8 +183,8 @@ for (let i = 0; i < N_USERS; i++) {
   out.users.push({ public: kp.publicKey(), secret: kp.secret() });
 }
 
-// 5) debit acak oleh admin — mensimulasikan pemakaian API per user
-console.log("\nadmin men-debit pemakaian API…");
+// 5) random debits by the admin — simulates API usage per user
+console.log("\nadmin debiting API usage…");
 for (const kp of users) {
   let left = FUND_USDC;
   for (let d = 0; d < N_DEBITS; d++) {
@@ -198,10 +198,10 @@ for (const kp of users) {
   }
 }
 
-// 6) opsional: satu user menarik sisa kreditnya (bukti refundable)
+// 6) optional: one user withdraws the remaining credit (proof it's refundable)
 if (DO_WITHDRAW && users.length > 0) {
   const kp = users[0];
-  console.log("\nuser[0] withdraw sisa kredit…");
+  console.log("\nuser[0] withdrawing remaining credit…");
   const balTx = new S.TransactionBuilder(await rpc.getAccount(kp.publicKey()), {
     fee: S.BASE_FEE,
     networkPassphrase: PASSPHRASE,
@@ -218,16 +218,16 @@ if (DO_WITHDRAW && users.length > 0) {
   }
 }
 
-// simpan wallet (reusable) + ringkasan
+// save wallets (reusable) + summary
 const walletsFile = new URL("./.sim-wallets.json", import.meta.url).pathname;
 const prev = existsSync(walletsFile) ? JSON.parse(readFileSync(walletsFile, "utf8")) : [];
 writeFileSync(walletsFile, JSON.stringify([...prev, ...out.users], null, 2));
 
-console.log("\n── Ringkasan ──");
-console.log(`users baru : ${out.users.length} (tersimpan di scripts/.sim-wallets.json)`);
-console.log(`total txs  : ${out.txs.length}`);
+console.log("\n── Summary ──");
+console.log(`new users : ${out.users.length} (saved to scripts/.sim-wallets.json)`);
+console.log(`total txs : ${out.txs.length}`);
 const sample = out.txs.find((t) => t.kind === "deposit");
 if (sample) {
-  console.log(`contoh deposit (untuk README):`);
+  console.log(`sample deposit (for the README):`);
   console.log(`  https://stellar.expert/explorer/testnet/tx/${sample.hash}`);
 }

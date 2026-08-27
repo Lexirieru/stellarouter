@@ -7,7 +7,7 @@ import { ModelSelect } from "./ModelSelect";
 const GATEWAY = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3001";
 const MODEL_KEY = "stellarouter:model";
 
-// Fallback saat katalog belum termuat — model gratis yang aktif di testnet.
+// Fallback while the catalog loads — the free model enabled on testnet.
 const FALLBACK_MODELS = ["minimax/minimax-m3:free"];
 
 const CHAT_KEY = "stellarouter:chat";
@@ -22,7 +22,7 @@ export function Playground() {
   const [apiKey, setApiKey] = useState("");
   const [models, setModels] = useState<string[]>(FALLBACK_MODELS);
   const [model, setModel] = useState(FALLBACK_MODELS[0]);
-  // Kebijakan jaringan dari gateway: di testnet hanya model gratis yang aktif.
+  // Network policy from the gateway: on testnet only free models are enabled.
   const [policy, setPolicy] = useState<{ network: string; mainnet: boolean } | null>(null);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Msg[]>([]);

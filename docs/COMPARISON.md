@@ -1,66 +1,72 @@
-# Stellarouter vs Ekosistem — Komparasi & Diferensiasi
+# Stellarouter vs. the Ecosystem — Comparison & Differentiation
 
-> Sumber: survei ekosistem via **Stellar Raven MCP** (direktori proyek stellarlight.xyz,
-> submission Stellar Hacks: Agents/DoraHacks, SCF records) — per 14 Agustus 2026.
+> Source: ecosystem survey via the **Stellar Raven MCP** (stellarlight.xyz project
+> directory, Stellar Hacks: Agents / DoraHacks submissions, SCF records) — as of
+> 14 August 2026.
 
-## Lanskap: "AI membayar API di Stellar"
+## Landscape: "AI pays for APIs on Stellar"
 
-Space ini panas dan tervalidasi — SDF punya use case resmi **agentic payments**
-(x402 + MPP), dan hackathon *Stellar Hacks: Agents* melahirkan belasan proyek.
-Tapi hampir semuanya berhenti di lapisan **infrastruktur/middleware**:
+This space is hot and validated — SDF has an official **agentic payments** use case
+(x402 + MPP), and the *Stellar Hacks: Agents* hackathon produced a dozen-plus
+projects. Almost all of them stop at the **infrastructure / middleware** layer:
 
-| Proyek | Apa itu | Lapisan | Bukti |
+| Project | What it is | Layer | Evidence |
 |---|---|---|---|
-| **REAPP** | Protokol otorisasi agentic (x402 + policy Soroban + mandat AP2) sebagai SDK TypeScript | SDK/protokol | SCF Build **$70k** (round 43) |
-| **stellar/stellar-mpp-sdk** | SDK resmi Stellar untuk MPP (charge + payment channels) | SDK resmi | repo aktif |
-| **x402 MCP Stellar Template** | Template Node/Python/Go untuk MCP server berbayar | Template | 4th place, Stellar Hacks: Agents |
-| **TollPay** | Middleware monetisasi MCP tools per-call USDC | Middleware | Winner, Stellar Hacks: Agents |
-| **StellarPay402** | Marketplace API agent-to-agent + registry Soroban | Marketplace | Agentic Hackathon (judge 1.0) |
-| **PUMAx402** | Hub x402: katalog REST+UI + CLI/MCP client 402→pay→retry | Hub/katalog API generik | Stellar Hacks: Agents |
-| **PLUTO** | Payment gateway ala Stripe untuk merchant + dukungan x402 | Gateway pembayaran umum | Stellar Hacks: Agents |
-| **AXON (DeAI)** | Marketplace AI terdesentralisasi, pay-per-inference x402/MPP | Marketplace inference | Stellar Hacks: Agents |
-| **RenderGate** | API headless-browser pay-per-render via x402 | Satu API vertikal | 3rd place, Stellar Hacks: Agents |
-| **x402kit / Oxide Gateway / Sentryx402 / NyayaMitra** | Toolkit & API vertikal berbayar x402 | Toolkit/API tunggal | Stellar Hacks: Agents |
-| **Nirium** | Protokol treasury & micropayments otonom + SDK agent | Protokol/SDK | Agentic Hackathon |
+| **REAPP** | Agentic authorization protocol (x402 + Soroban policy + AP2 mandates) as a TypeScript SDK | SDK / protocol | SCF Build **$70k** (round 43) |
+| **stellar/stellar-mpp-sdk** | Official Stellar SDK for MPP (charge + payment channels) | Official SDK | active repo |
+| **x402 MCP Stellar Template** | Node/Python/Go templates for paid MCP servers | Template | 4th place, Stellar Hacks: Agents |
+| **TollPay** | Middleware for monetizing MCP tools per call in USDC | Middleware | Winner, Stellar Hacks: Agents |
+| **StellarPay402** | Agent-to-agent API marketplace + Soroban registry | Marketplace | Agentic Hackathon (judge score 1.0) |
+| **PUMAx402** | x402 hub: REST catalog + UI + CLI/MCP client (402 → pay → retry) | Generic API hub / catalog | Stellar Hacks: Agents |
+| **PLUTO** | Stripe-like payment gateway for merchants + x402 support | General payment gateway | Stellar Hacks: Agents |
+| **AXON (DeAI)** | Decentralized AI marketplace, pay-per-inference via x402/MPP | Inference marketplace | Stellar Hacks: Agents |
+| **RenderGate** | Pay-per-render headless-browser API via x402 | Single vertical API | 3rd place, Stellar Hacks: Agents |
+| **x402kit / Oxide Gateway / Sentryx402 / NyayaMitra** | x402 toolkits and single paid APIs | Toolkit / single API | Stellar Hacks: Agents |
+| **Nirium** | Autonomous treasury & micropayments protocol + agent SDK | Protocol / SDK | Agentic Hackathon |
 
-**Yang paling dekat** dengan kita: AXON (pay-per-inference marketplace) dan PUMAx402
-(katalog + client). Keduanya prototype hackathon, tanpa product surface untuk manusia,
-tanpa billing prepaid on-chain, tanpa manajemen key.
+**Closest to us:** AXON (pay-per-inference marketplace) and PUMAx402 (catalog +
+client). Both are hackathon prototypes with no product surface for humans, no
+prepaid on-chain billing, and no key management.
 
-## Diferensiasi Stellarouter
+## How Stellarouter is different
 
-Stellarouter bukan SDK dan bukan marketplace generik — ini **produk gateway LLM
-end-to-end ala OpenRouter**, dengan billing yang justru tidak mungkin ditiru OpenRouter:
+Stellarouter is not an SDK and not a generic marketplace — it is an **end-to-end,
+OpenRouter-style LLM gateway product**, with a billing model OpenRouter itself
+cannot replicate:
 
-1. **Dual-door billing — satu-satunya di lanskap ini.**
-   - *Pintu agent:* x402 pay-per-call. Tanpa akun, tanpa API key, tanpa saldo — dan
-     **nol XLM** (fee disponsori facilitator OZ Channels). Agen bayar $0.005 USDC per call.
-   - *Pintu manusia:* prepaid credits ala OpenRouter, tapi saldonya **hidup di kontrak
-     Soroban** (`credits`), bukan di database kami.
-2. **Saldo non-custodial & refundable.** Di OpenRouter, kredit adalah entri database
-   custodial yang hangus sesuai kebijakan mereka. Di Stellarouter, `withdraw()` mengembalikan
-   USDC yang tidak terpakai kapan saja — admin hanya bisa men-debit usage, tidak bisa
-   menyentuh sisa saldo user.
-3. **Proof-of-billing on-chain.** Setiap `deposit`/`debit`/`withdraw` memancarkan contract
-   event yang bisa diverifikasi siapa pun di explorer. Tagihan LLM yang auditable publik —
-   tidak ada gateway web2 (OpenRouter, Together, dsb.) yang bisa menawarkan ini.
-4. **Wallet = akun.** API key diikat ke kepemilikan wallet lewat challenge ala SEP-10
-   (tanda tangan, bukan email/password). Key di-hash (SHA-256) di server.
-5. **Product surface lengkap**, bukan endpoint tunggal: katalog model (OpenRouter API),
-   Playground dengan mode agent/human, halaman Keys, usage Logs, activity feed on-chain
-   real-time.
-6. **Mainnet by config.** Seluruh jalur pembayaran dirancang flip-`.env` ke pubnet tanpa
-   perubahan kode.
+1. **Dual-door billing — unique in this landscape.**
+   - *Agent door:* x402 pay-per-call. No account, no API key, no balance — and
+     **zero XLM** (fees are sponsored by the OpenZeppelin Channels facilitator).
+     Agents pay $0.005 USDC per call.
+   - *Human door:* prepaid credits à la OpenRouter, except the balance **lives in a
+     Soroban contract** (`credits`), not in our database.
+2. **Non-custodial, refundable balance.** On OpenRouter, credits are custodial
+   database rows that expire on their terms. On Stellarouter, `withdraw()` returns
+   unused USDC at any time — the admin can only debit usage, never touch the
+   remaining balance.
+3. **Proof-of-billing on-chain.** Every `deposit` / `debit` / `withdraw` emits a
+   contract event anyone can verify on the explorer. Publicly auditable LLM
+   billing — no web2 gateway (OpenRouter, Together, etc.) can offer this.
+4. **Wallet = account.** API keys are bound to wallet ownership through a
+   SEP-10-style challenge (a signature, not an email/password). Keys are stored
+   hashed (SHA-256) on the server.
+5. **A complete product surface**, not a single endpoint: model catalog
+   (OpenRouter API), Playground with agent/human modes, Keys page, usage Logs,
+   real-time on-chain activity feed.
+6. **Mainnet by configuration.** The whole payment path is designed to flip to
+   pubnet via `.env` with no code changes.
 
-### Positioning satu kalimat
+### One-line positioning
 
-> **Stellarouter = OpenRouter yang tagihannya bisa diaudit di blockchain** — agen AI bayar
-> per-call lewat x402 tanpa punya XLM, manusia top-up USDC ke vault kredit on-chain yang
-> bisa ditarik kembali kapan saja.
+> **Stellarouter = OpenRouter whose bills can be audited on the blockchain** — AI
+> agents pay per call via x402 without holding XLM; humans top up USDC into an
+> on-chain credit vault they can withdraw from at any time.
 
-### Cara pakai komparasi ini
+### How to use this comparison
 
-- **Submission ide L4:** kutip REAPP ($70k SCF) dan barisan pemenang Stellar Hacks: Agents
-  sebagai *validasi pasar*, lalu tunjukkan gap: belum ada produk gateway LLM utuh.
-- **Demo/video:** tunjukkan dua pintu berdampingan — terminal agent (402 → pay → 200) dan
-  browser manusia (top-up → chat → saldo berkurang → event muncul di feed + explorer).
+- **Level 4 idea submission:** cite REAPP ($70k SCF) and the Stellar Hacks: Agents
+  winners as *market validation*, then show the gap: no complete LLM-gateway
+  product exists yet.
+- **Demo / video:** show the two doors side by side — an agent terminal
+  (402 → pay → 200) and a human browser (top up → chat → balance decreases →
+  event appears in the feed and on the explorer).

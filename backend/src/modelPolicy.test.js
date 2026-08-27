@@ -9,7 +9,7 @@ import {
   TESTNET_MODELS,
 } from "./modelPolicy.js";
 
-// Test berjalan dengan STELLAR_NETWORK default (testnet).
+// Tests run with the default STELLAR_NETWORK (testnet).
 describe("model policy (testnet)", () => {
   test("defaults to free models only", () => {
     expect(IS_MAINNET).toBe(false);

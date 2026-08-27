@@ -1,12 +1,12 @@
 "use client";
 
-// Kartu status transaksi — melacak siklus hidup penuh:
-// signing (di wallet) → submitting → pending (menunggu ledger) → success/failed.
+// Transaction status card — tracks the full lifecycle:
+// signing (in the wallet) → submitting → pending (waiting for a ledger) → success/failed.
 
 import type { TxPhase } from "@/lib/credits";
 
 export type TxState = {
-  /** Label aksi, mis. "Top up", "Refund", "Enable USDC". */
+  /** Action label, e.g. "Top up", "Refund", "Enable USDC". */
   label: string;
   phase: "signing" | TxPhase;
   hash?: string;

@@ -98,7 +98,7 @@ export default function CreditsPage() {
       setUiError(describeError(e));
       setTxState((s) =>
         s && (s.phase === "signing" || s.phase === "submitting")
-          ? null // gagal sebelum masuk network (mis. user reject) — cukup chip error
+          ? null // failed before reaching the network (e.g. user rejected) — the error chip is enough
           : s
       );
     } finally {

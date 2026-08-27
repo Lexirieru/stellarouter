@@ -18,16 +18,16 @@ import {
 
 type WalletContextValue = {
   address: string | null;
-  /** Nama jaringan yang aktif di wallet (mis. "TESTNET", "PUBLIC"). */
+  /** Network name active in the wallet (e.g. "TESTNET", "PUBLIC"). */
   network: string | null;
-  /** Id wallet yang dipilih user di modal (mis. "freighter", "xbull"). */
+  /** Id of the wallet the user picked in the modal (e.g. "freighter", "xbull"). */
   walletId: string | null;
   connecting: boolean;
-  /** Error koneksi terakhir (sudah dinormalisasi) — null saat sukses. */
+  /** Last connection error (normalized) — null on success. */
   connectError: WalletError | null;
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
-  /** Tanda tangani XDR dengan wallet terpilih; mengembalikan signed XDR. */
+  /** Sign an XDR with the selected wallet; returns the signed XDR. */
   signTransaction: (xdr: string) => Promise<string>;
 };
 
@@ -40,8 +40,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [connecting, setConnecting] = useState(false);
   const [connectError, setConnectError] = useState<WalletError | null>(null);
 
-  // Pulihkan sesi: kit menyimpan wallet + address terakhir di localStorage,
-  // jadi getAddress() setelah init mengembalikan sesi sebelumnya tanpa prompt.
+  // Restore the session: the kit persists the last wallet + address in
+  // localStorage, so getAddress() after init returns the previous session without a prompt.
   useEffect(() => {
     (async () => {
       try {
@@ -52,7 +52,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setWalletId(kit.selectedModule?.productId ?? null);
         setNetwork(await assertNetwork(kit).catch(() => null));
       } catch {
-        // Tidak ada sesi tersimpan / wallet tak tersedia — tetap disconnected.
+        // No stored session / wallet unavailable — stay disconnected.
       }
     })();
   }, []);
@@ -62,10 +62,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     setConnectError(null);
     try {
       const kit = await getKit();
-      // authModal() membuka picker multi-wallet (Freighter, xBull, Albedo,
-      // Lobstr, Hana, …), set module aktif, lalu mengembalikan address.
+      // authModal() opens the multi-wallet picker (Freighter, xBull, Albedo,
+      // Lobstr, Hana, …), sets the active module, and returns the address.
       const { address: addr } = await kit.authModal();
-      const net = await assertNetwork(kit); // NETWORK_MISMATCH bila beda jaringan
+      const net = await assertNetwork(kit); // NETWORK_MISMATCH if the networks differ
       setAddress(addr);
       setWalletId(kit.selectedModule?.productId ?? null);
       setNetwork(net);
@@ -83,7 +83,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const kit = await getKit();
       await kit.disconnect();
     } catch {
-      // Kit belum sempat init — cukup reset state lokal.
+      // The kit never initialized — just reset local state.
     }
     setAddress(null);
     setNetwork(null);

@@ -1,6 +1,6 @@
-// Event kontrak `credits` secara real-time via RPC getEvents.
-// Kontrak memancarkan: (Symbol("deposit"|"debit"|"withdraw"|"collect"), Address)
-// dengan value = amount (i128). Kita poll RPC dan parse jadi bentuk siap-UI.
+// Real-time `credits` contract events via RPC getEvents.
+// The contract emits: (Symbol("deposit"|"debit"|"withdraw"|"collect"), Address)
+// with value = amount (i128). We poll the RPC and parse into a UI-ready shape.
 
 import * as S from "@stellar/stellar-sdk";
 import { CREDITS_CONTRACT_ID, rpcServer } from "./credits";
@@ -10,7 +10,7 @@ export type CreditEventType = "deposit" | "debit" | "withdraw" | "collect";
 export type CreditEvent = {
   id: string;
   type: CreditEventType;
-  /** Alamat user (deposit/debit/withdraw) atau penerima (collect). */
+  /** User address (deposit/debit/withdraw) or recipient (collect). */
   who: string;
   /** Jumlah dalam stroops USDC (i128). */
   amount: bigint;
@@ -21,7 +21,7 @@ export type CreditEvent = {
 
 const EVENT_TYPES = new Set(["deposit", "debit", "withdraw", "collect"]);
 
-// Backfill awal (~1 jam ledger @5s) — cukup untuk mengisi feed pertama kali.
+// Initial backfill (~1 hour of ledgers @5s) — enough to populate the feed at first load.
 const INITIAL_BACKFILL_LEDGERS = 720;
 
 export function parseEvent(ev: {
@@ -49,13 +49,13 @@ export function parseEvent(ev: {
       at: ev.ledgerClosedAt ?? null,
     };
   } catch {
-    return null; // event asing / bentuk tak terduga — lewati saja
+    return null; // foreign event / unexpected shape — skip it
   }
 }
 
 /**
- * Ambil event kontrak sejak `sinceLedger` (atau backfill awal bila kosong).
- * Mengembalikan event terparse + ledger terakhir untuk poll berikutnya.
+ * Fetch contract events since `sinceLedger` (or the initial backfill when absent).
+ * Returns parsed events + the latest ledger for the next poll.
  */
 export async function fetchCreditEvents(sinceLedger?: number): Promise<{
   events: CreditEvent[];
@@ -76,6 +76,6 @@ export async function fetchCreditEvents(sinceLedger?: number): Promise<{
     .map((ev) => parseEvent(ev as unknown as Parameters<typeof parseEvent>[0]))
     .filter((e): e is CreditEvent => e !== null);
 
-  // Overlap 1 ledger antar-poll supaya tidak ada event terlewat; dedupe by id.
+  // Overlap one ledger between polls so no event is missed; dedupe by id.
   return { events, nextLedger: Math.max(resp.latestLedger, start) };
 }

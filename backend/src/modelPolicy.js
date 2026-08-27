@@ -1,18 +1,18 @@
-// Kebijakan model per jaringan.
+// Per-network model policy.
 //
-// Testnet memakai USDC tiruan, tapi upstream LLM (OpenRouter) menagih dolar
-// sungguhan — jadi di testnet hanya model GRATIS/termurah yang diaktifkan.
-// Katalog tetap ditampilkan penuh supaya produknya terlihat utuh; model lain
-// diberi label "available in mainnet" dan ditolak SEBELUM pembayaran.
-// Di pubnet (mainnet) seluruh katalog aktif tanpa perubahan kode.
+// Testnet uses play-money USDC, but the upstream LLM provider (OpenRouter)
+// bills real dollars — so on testnet only FREE/cheapest models are enabled.
+// The catalog is still shown in full so the product looks complete; other
+// models are labelled "available in mainnet" and rejected BEFORE payment.
+// On pubnet (mainnet) the whole catalog is enabled with no code change.
 
 const NETWORK = process.env.STELLAR_NETWORK || "stellar:testnet";
 export const IS_MAINNET = NETWORK === "stellar:pubnet";
 
-// Model gratis di OpenRouter (suffix ":free" = $0 in/out). Override via env:
+// Free models on OpenRouter (":free" suffix = $0 in/out). Override via env:
 //   TESTNET_MODELS=google/gemma-4-31b-it:free,minimax/minimax-m3:free
-// Urutan = prioritas fallback (diprobe 27 Agu 2026: minimax paling stabil &
-// jawabannya bersih; gemma bagus tapi sering 429; nemotron cadangan terakhir).
+// Order = fallback priority (probed 27 Aug 2026: minimax is the most stable and
+// answers cleanly; gemma is good but often 429s; nemotron is the last resort).
 const DEFAULT_TESTNET_MODELS = [
   "minimax/minimax-m3:free",
   "google/gemma-4-31b-it:free",
@@ -27,7 +27,7 @@ if (TESTNET_MODELS.length === 0) TESTNET_MODELS.push(...DEFAULT_TESTNET_MODELS);
 
 const allowed = new Set(TESTNET_MODELS);
 
-/** Model default untuk request tanpa `model`. */
+/** Default model for requests that omit `model`. */
 export const DEFAULT_MODEL = IS_MAINNET ? "openai/gpt-4o-mini" : TESTNET_MODELS[0];
 
 export function isModelEnabled(id) {
@@ -35,14 +35,14 @@ export function isModelEnabled(id) {
   return typeof id === "string" && allowed.has(id);
 }
 
-/** Daftar model yang bisa dipakai sekarang (kosong = semua, di mainnet). */
+/** Models usable right now (empty = all of them, on mainnet). */
 export function enabledModels() {
   return IS_MAINNET ? [] : [...TESTNET_MODELS];
 }
 
 /**
- * Tambahkan `enabled` + `availability` ke setiap entri katalog OpenRouter dan
- * letakkan model yang aktif di urutan teratas.
+ * Add `enabled` + `availability` to every OpenRouter catalog entry and float the
+ * enabled models to the top.
  */
 export function annotateCatalog(data) {
   const list = Array.isArray(data?.data) ? data.data : [];
@@ -63,8 +63,8 @@ export function annotateCatalog(data) {
 }
 
 /**
- * Validasi `body.model` untuk request chat. Mengisi default bila kosong.
- * Mengembalikan objek error (untuk res.status(400).json(...)) atau null.
+ * Validate `body.model` for a chat request, filling in the default when absent.
+ * Returns an error object (for res.status(400).json(...)) or null.
  */
 export function gateModel(body) {
   if (!body || typeof body !== "object") return null;

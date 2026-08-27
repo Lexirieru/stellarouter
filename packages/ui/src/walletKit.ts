@@ -1,15 +1,15 @@
-// Lapisan tipis di atas StellarWalletsKit (v2, static singleton).
-// Kit di-load lazy (dynamic import) supaya modul ini aman di-import saat SSR —
-// kit menyentuh window/localStorage pada load.
+// Thin layer over StellarWalletsKit (v2, static singleton).
+// The kit is loaded lazily (dynamic import) so this module is safe to import
+// during SSR — the kit touches window/localStorage on load.
 
 import { STELLAR_NETWORK, stellarConfig } from "./stellar";
 
-/** Error wallet yang sudah dinormalisasi — UI cukup switch di `code`. */
+/** Normalized wallet error — the UI only needs to switch on `code`. */
 export type WalletErrorCode =
-  | "WALLET_NOT_FOUND" // wallet tidak terpasang / tidak tersedia di browser
-  | "USER_REJECTED" // user menutup modal / menolak connect / menolak tanda tangan
-  | "NETWORK_MISMATCH" // wallet ada di jaringan berbeda dari app (mis. PUBLIC vs TESTNET)
-  | "NOT_CONNECTED" // aksi butuh wallet tapi belum connect
+  | "WALLET_NOT_FOUND" // wallet not installed / not available in this browser
+  | "USER_REJECTED" // user closed the modal / declined to connect / declined to sign
+  | "NETWORK_MISMATCH" // wallet is on a different network than the app (e.g. PUBLIC vs TESTNET)
+  | "NOT_CONNECTED" // the action needs a wallet but none is connected
   | "UNKNOWN";
 
 export class WalletError extends Error {
@@ -21,7 +21,7 @@ export class WalletError extends Error {
   }
 }
 
-/** Normalisasi error apa pun dari kit/wallet menjadi WalletError. */
+/** Normalize any kit/wallet error into a WalletError. */
 export function toWalletError(e: unknown): WalletError {
   if (e instanceof WalletError) return e;
   const raw =
@@ -49,7 +49,7 @@ export function toWalletError(e: unknown): WalletError {
   return new WalletError("UNKNOWN", raw);
 }
 
-/** Copy siap-tampil per error code (dipakai halaman mana pun). */
+/** Display-ready copy per error code (used by any page). */
 export function walletErrorMessage(err: WalletError): string {
   switch (err.code) {
     case "WALLET_NOT_FOUND":
@@ -69,7 +69,7 @@ type Kit = typeof import("@creit.tech/stellar-wallets-kit").StellarWalletsKit;
 
 let kitPromise: Promise<Kit> | null = null;
 
-/** Init sekali (client-only) lalu kembalikan kelas statis kit. */
+/** Initialize once (client-only) and return the kit's static class. */
 export function getKit(): Promise<Kit> {
   if (typeof window === "undefined") {
     return Promise.reject(
@@ -95,8 +95,8 @@ export function getKit(): Promise<Kit> {
 }
 
 /**
- * Pastikan wallet berada di jaringan yang sama dengan app.
- * Lempar NETWORK_MISMATCH bila berbeda; diam bila wallet tak melaporkan network.
+ * Make sure the wallet is on the same network as the app.
+ * Throws NETWORK_MISMATCH when they differ; stays quiet if the wallet doesn't report a network.
  */
 export async function assertNetwork(kit: Kit): Promise<string | null> {
   try {
@@ -115,6 +115,6 @@ export async function assertNetwork(kit: Kit): Promise<string | null> {
     return network ?? null;
   } catch (e) {
     if (e instanceof WalletError && e.code === "NETWORK_MISMATCH") throw e;
-    return null; // wallet tidak expose getNetwork — jangan blokir
+    return null; // the wallet doesn't expose getNetwork — don't block
   }
 }

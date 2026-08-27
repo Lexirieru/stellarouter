@@ -187,8 +187,8 @@ app.get("/", (_req, res) =>
 
 // ─── Human door (prepaid credits) — runs BEFORE x402 ─────────────────────────
 // ─── Model gate (runs BEFORE any payment) ────────────────────────────────────
-// Di testnet hanya model gratis/termurah yang aktif (lihat modelPolicy.js);
-// model lain ditolak 400 di sini supaya tidak ada yang membayar lalu gagal.
+// On testnet only free/cheapest models are enabled (see modelPolicy.js); other
+// models are rejected with 400 here so nobody pays and then fails.
 app.post("/v1/chat/completions", (req, res, next) => {
   const gate = gateModel(req.body);
   if (gate) return res.status(400).json(gate);
@@ -276,8 +276,8 @@ app.post("/v1/chat/completions", async (req, res) => {
   }
 });
 
-// Di serverless (Vercel) app di-export dan di-mount oleh api/index.js —
-// hanya listen saat dijalankan langsung (`node src/server.js`).
+// On serverless (Vercel) the app is exported and mounted by api/index.js —
+// only listen when run directly (`node src/server.js`).
 if (!process.env.VERCEL) {
   app.listen(PORT, () =>
     console.log(

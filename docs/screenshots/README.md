@@ -1,20 +1,20 @@
-# Screenshots untuk submission
+# Submission screenshots
 
-File yang dibutuhkan README root (nama harus persis):
+Files referenced by the root README (names must match exactly):
 
-| File | Cara ambil |
+| File | How to capture |
 |---|---|
-| `wallet-options.png` | Buka console (`cd frontend && bun run dev`) → klik **Connect Wallet** di sidebar → screenshot modal Stellar Wallets Kit yang menampilkan daftar wallet (Freighter, xBull, Albedo, Lobstr, Hana, …). Ini bukti multi-wallet untuk checklist Level 2. |
-| `credits-live-feed.png` | Halaman **Credits** dengan wallet terhubung: lakukan top-up kecil, tangkap saat kartu status transaksi tampil (pending/confirmed) dan feed **On-chain activity** berisi event. Jalankan `node scripts/simulate-users.js` di backend/ dulu supaya feed ramai. |
-| `playground.png` | Halaman **Playground** — toggle agent/human terlihat. |
+| `wallet-options.png` | Run the console (`cd frontend && bun run dev`) → click **Connect Wallet** in the sidebar → capture the Stellar Wallets Kit modal listing the wallets (Freighter, xBull, Albedo, Lobstr, Hana, …). This is the multi-wallet proof for the Level 2 checklist. |
+| `credits-live-feed.png` | **Credits** page with a wallet connected: the on-chain balance and the **On-chain activity** feed with events. Run `node scripts/simulate-users.js` in `backend/` first so the feed has traffic. |
+| `playground.png` | **Playground** page — agent/human toggle visible, ideally with a paid x402 receipt. |
 
-Tips: jendela ~1280px lebar, light mode, crop rapi tanpa bookmark bar.
+Tips: ~1280px wide window, light mode, tidy crop without the bookmarks bar.
 
-File Level 3 (sudah tergenerate otomatis via Playwright):
+Level 3 files (generated automatically with Playwright):
 
-| File | Isi |
+| File | Contents |
 |---|---|
-| `mobile-playground.png` / `mobile-credits.png` | UI mobile 390×844 (checklist "mobile responsive UI") |
-| `ci-pipeline.png` | Halaman commits GitHub: popover status commit ✓ "Vercel — Deployment has completed" (CD via Git integration) |
-| `ci-build-log.png` | Build log Vercel untuk commit tersebut (`vercel inspect <url> --logs`) |
-
+| `mobile-playground.png` / `mobile-credits.png` | Mobile UI at 390×844 ("mobile responsive UI" checklist item) |
+| `tests-passing.png` | Real `cargo test` + `bun test` output (9 + 16 passing) |
+| `ci-pipeline.png` | GitHub commits page: commit status popover ✓ "Vercel — Deployment has completed" (CD via Git integration) |
+| `ci-build-log.png` | Vercel build log for that commit (`vercel inspect <url> --logs`) |

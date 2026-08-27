@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
-// STATIC_EXPORT=1 → build statis (untuk hosting file statis mana pun, mis.
-// deploy `out/` ke Vercel). Semua route console memang prerender statis;
-// data on-chain diambil client-side via RPC/Horizon.
+// STATIC_EXPORT=1 → static build (for any static file host, e.g. deploying
+// `out/` to Vercel). Every console route prerenders statically; on-chain data
+// is fetched client-side via RPC/Horizon.
 const staticExport = process.env.STATIC_EXPORT === "1";
 
 const nextConfig: NextConfig = {
@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@stellarouter/ui"],
   ...(staticExport && {
     output: "export" as const,
-    trailingSlash: true, // /credits → credits/index.html — jalan di host statis mana pun
+    trailingSlash: true, // /credits → credits/index.html — works on any static host
     images: { unoptimized: true },
   }),
 };

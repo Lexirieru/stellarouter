@@ -16,7 +16,7 @@ const PASSPHRASE = stellarConfig.networkPassphrase;
 const server = new S.rpc.Server(RPC_URL);
 const contract = new S.Contract(CONTRACT_ID);
 
-// Dipakai lintas-modul (event feed, dsb.)
+// Shared across modules (event feed, etc.)
 export const CREDITS_CONTRACT_ID = CONTRACT_ID;
 export const rpcServer = server;
 
@@ -64,7 +64,7 @@ export async function buildAddTrustline(user: string): Promise<string> {
 }
 
 // ─── Transaction status tracking ─────────────────────────────────────────────
-// Setiap submit melaporkan fase ke UI: submitting → pending → success/failed.
+// Every submit reports its phase to the UI: submitting → pending → success/failed.
 export type TxPhase = "submitting" | "pending" | "success" | "failed";
 export type TxUpdate = { phase: TxPhase; hash?: string; error?: string };
 export type OnTxUpdate = (u: TxUpdate) => void;

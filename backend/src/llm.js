@@ -71,7 +71,7 @@ export async function chatCompletion(body) {
     if (!resp.ok) {
       lastError = new Error(`upstream ${resp.status} (${model}): ${text.slice(0, 300)}`);
       if (!RETRYABLE.has(resp.status)) throw lastError;
-      continue; // coba model aktif berikutnya
+      continue; // try the next enabled model
     }
     // Some upstreams (9router) append a trailing "data: [DONE]" after the JSON
     // and/or leading whitespace — strip those before parsing.
@@ -90,5 +90,5 @@ export async function chatCompletion(body) {
   throw lastError ?? new Error("upstream: no model candidates");
 }
 
-// Status upstream yang layak dicoba ulang dengan model lain.
+// Upstream statuses worth retrying with another model.
 const RETRYABLE = new Set([408, 429, 500, 502, 503, 504]);

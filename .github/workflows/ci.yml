@@ -1,8 +1,8 @@
 name: CI
 
-# Trigger: manual (Actions tab) sampai billing lock akun GitHub dibuka —
-# setiap push saat ini gagal 2 detik dengan "account is locked due to a billing
-# issue" dan mengotori status commit. Kembalikan ke push/pull_request setelahnya:
+# Trigger: manual (Actions tab) until the GitHub account billing lock is lifted —
+# right now every push fails after 2s with "account is locked due to a billing
+# issue" and pollutes the commit status. Restore push/pull_request afterwards:
 #   push: { branches: [main] }
 #   pull_request:
 on:
@@ -65,5 +65,5 @@ jobs:
           code=$?
           set -e
           cat boot.log
-          # tanpa OZ_API_KEY server harus exit non-zero dengan pesan jelas
+          # without OZ_API_KEY the server must exit non-zero with a clear message
           test $code -ne 0 && grep -qi "OZ_API_KEY" boot.log

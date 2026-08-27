@@ -1,74 +1,76 @@
-# Stellarouter — Roadmap Sprint Agustus 2026 (RiseIn Stellar Journey to Mastery)
+# Stellarouter — August 2026 Sprint Roadmap (RiseIn Stellar Journey to Mastery)
 
-> Target: substansi **Level 2 → Level 5** rampung dalam Agustus. Development full-AI
-> (diizinkan devrel), aktivitas user direpresentasikan wallet testnet yang di-generate
-> untuk bertransaksi nyata di kontrak `credits`.
+> Goal: ship the substance of **Level 2 → Level 5** within August. Development is
+> AI-assisted end to end (allowed by DevRel); user activity is represented by
+> generated testnet wallets transacting for real against the `credits` contract.
 
 ## Status
 
-| Level | Status | Catatan |
+| Level | Status | Notes |
 |---|---|---|
-| 1 — White Belt | ✅ Lulus | |
-| 2 — Yellow Belt | 🔨 Sprint minggu ini | Challenge aktif Agustus |
-| 3 — Orange Belt | 🔜 Minggu depan | Termasuk submit ide Level 4 |
-| 4–6 | 🔒 Terkunci | Butuh approval ide dari Stellar Builder Team |
+| 1 — White Belt | ✅ Passed | |
+| 2 — Yellow Belt | ✅ Submitted & accepted | August challenge |
+| 3 — Orange Belt | ⏳ Submitted (pending review) | 27 Aug — includes the Level 4 idea submission |
+| 4–6 | 🔒 Locked | Requires idea approval from the Stellar Builder Team |
 
-**Risiko satu-satunya di luar kendali:** approval ide L4 + cadence platform (kalau
-review-nya bulanan, submit L4/L5 mungkin jatuh di periode berikutnya — materi tetap
-disiapkan sekarang supaya begitu unlock tinggal submit).
+**The only risk outside our control:** Level 4 idea approval and the platform's
+review cadence (if reviews are monthly, L4/L5 submissions may fall into the next
+period — the material is prepared now so it can be submitted the moment it unlocks).
 
-## Minggu 3 Agustus (14–17) — Level 2 ✅ deliverables
+## Week 3 of August (14–17) — Level 2 ✅ deliverables
 
-- [x] Kontrak `credits` deployed testnet: `CAEFFQAL6SGQF6OV5BOBE23NAC2T7WXOUUE5XRDOH2KRN2HXRMDXA7RE`
-- [x] Kontrak dipanggil dari frontend (read `balance` via simulate, write `deposit`/`withdraw`)
-- [x] **StellarWalletsKit** — multi-wallet picker (Freighter, xBull, Albedo, Hana, dll)
-- [x] **Status transaksi** signing → submitting → pending → success/fail + tx hash (link stellar.expert)
+- [x] `credits` contract deployed on testnet: `CAEFFQAL6SGQF6OV5BOBE23NAC2T7WXOUUE5XRDOH2KRN2HXRMDXA7RE`
+- [x] Contract called from the frontend (read `balance` via simulation, write `deposit` / `withdraw`)
+- [x] **Stellar Wallets Kit** — multi-wallet picker (Freighter, xBull, Albedo, Hana, …)
+- [x] **Transaction status** signing → submitting → pending → success/fail + tx hash (stellar.expert link)
 - [x] **5 error types**: wallet not found · user rejected · insufficient balance · network mismatch · tx failed
-- [x] **Event listening real-time**: poll `getEvents` RPC → activity feed + auto-refresh saldo
-- [x] **Simulasi user**: `backend/scripts/simulate-users.js` — 3 user, 16 tx nyata (14 Agu)
-- [x] **Root README** — setup, alamat kontrak, tx hash verifiable (screenshot: tinggal capture, lihat docs/screenshots/README.md)
-- [x] 10+ meaningful commits (sudah 39+)
+- [x] **Real-time event listening**: RPC `getEvents` polling → activity feed + balance auto-refresh
+- [x] **User simulation**: `backend/scripts/simulate-users.js` — 3 users, 16 real transactions (14 Aug)
+- [x] **Root README** — setup, contract address, verifiable tx hashes, screenshots
+- [x] 10+ meaningful commits (50+)
 
-## Minggu 3–4 Agustus (18–24) — Level 3
+## Weeks 3–4 of August (18–24) — Level 3
 
-- [x] CI/CD GitHub Actions: `ci.yml` (cargo test + wasm + lint/test/build frontend + boot check gateway) + `deploy-contract.yml` (deploy testnet sekali-klik)
-- [x] Deploy live frontend → **Vercel** (static export): https://stellarouter.vercel.app (GitHub Pages dimatikan atas permintaan)
-- [ ] Host gateway (Railway free plan penuh — butuh keputusan user: upgrade Railway / `fly auth login` / Render)
-- [x] Screenshot CI/CD running — via **Vercel Git integration** (push → build → deploy, status ✓ di commit GitHub): `ci-pipeline.png` + `ci-build-log.png`
-- [ ] GitHub Actions masih terkunci billing → `ci.yml` sementara `workflow_dispatch`; setelah billing beres: kembalikan trigger `push`/`pull_request` dan jalankan
-- [x] Test frontend: 16 unit test bun (errors, stroops, parseEvent) + 9 test kontrak
-- [x] Mobile responsive (top bar + nav scroll) + screenshot 390px
+- [x] CI/CD: `ci.yml` (cargo test + wasm build + frontend lint/test/build + gateway boot check) + `deploy-contract.yml` (one-click testnet deploy)
+- [x] Live frontend → **Vercel**: https://stellarouter.vercel.app (GitHub Pages retired on request)
+- [ ] Host the gateway (Railway free plan is full — user decision: upgrade Railway / `fly auth login` / Render / Vercel functions)
+- [x] CI/CD screenshot — via **Vercel Git integration** (push → build → deploy, ✓ status on the GitHub commit): `ci-pipeline.png` + `ci-build-log.png`
+- [ ] GitHub Actions is still billing-locked → `ci.yml` temporarily on `workflow_dispatch`; once billing is resolved, restore the `push` / `pull_request` triggers and run it
+- [x] Frontend tests: 16 bun unit tests (errors, stroops, parseEvent) + 9 contract tests + 4 gateway tests
+- [x] Mobile responsive (top bar + scrolling nav) + 390px screenshots
 - [x] Demo video 1:05 — `docs/demo/stellarouter-demo.mp4`
-- [x] Inter-contract call: sudah ada (credits → USDC SAC via `token::Client`)
-- [ ] **Submit ide Level 4** — draft siap di [L4-IDEA.md](./L4-IDEA.md), tinggal user submit
+- [x] Inter-contract call: present (credits → USDC SAC via `token::Client`)
+- [x] **Level 4 idea submission** — paste-ready text in [L4-IDEA-SUBMISSION.md](./L4-IDEA-SUBMISSION.md), long form in [L4-IDEA.md](./L4-IDEA.md)
 
-## Minggu 4–5 Agustus (25–31) — Materi Level 4 & 5 (submit begitu unlock)
+## Weeks 4–5 of August (25–31) — Level 4 & 5 material (submit once unlocked)
 
-Level 4 — produk production-grade:
-- [x] Kebijakan model per jaringan (27 Agu): testnet = model gratis saja (`TESTNET_MODELS`, fallback otomatis saat 429), katalog lain berlabel "available in mainnet"; pubnet = semua aktif
-- [ ] Per-model pricing di pintu x402 (route berbayar per tier model)
-- [ ] Streaming responses (SSE) di Playground & API
+Level 4 — production-grade product:
+- [x] Network-aware model policy (27 Aug): testnet = free models only (`TESTNET_MODELS`, automatic fallback on 429), everything else labelled "available in mainnet"; pubnet = full catalog
+- [ ] Per-model pricing on the x402 door (paid routes per model tier)
+- [ ] Streaming responses (SSE) in the Playground & API
 - [ ] Rate limiting + observability (metrics per key, per model)
-- [ ] Hardening kontrak: event untuk `set_admin`, pause switch (opsional)
+- [ ] Contract hardening: `set_admin` event, pause switch (optional)
 
 Level 5 — traction + mainnet-ready:
-- [ ] Onboarding flow agent (SKILL.md + contoh client → agen AI mana pun bisa bayar)
-- [ ] Dokumentasi publik + landing page live
-- [ ] Checklist mainnet: flip `.env` (pubnet, facilitator OZ mainnet, USDC Circle mainnet) — by design tanpa ubah kode
-- [ ] Bukti penggunaan: log usage nyata dari wallet simulasi + agen demo
+- [ ] Agent onboarding flow (SKILL.md + example clients → any AI agent can pay)
+- [ ] Public documentation + live landing page
+- [ ] Mainnet checklist: flip `.env` (pubnet, OZ mainnet facilitator, Circle USDC) — no code changes by design
+- [ ] Usage evidence: real logs from simulated wallets + demo agents
 
-## Ide Level 4 (untuk approval — ringkasan)
+## Level 4 idea (for approval — summary)
 
-1. **Problem:** AI agent tidak bisa punya kartu kredit; API LLM terkunci di balik langganan
-   & API key milik manusia. Manusia pun tidak bisa mengaudit tagihan LLM mereka.
-2. **Why Stellar:** USDC native (SAC), settlement ~5 detik, x402 + OZ Channels mensponsori
-   fee (agent butuh USDC, nol XLM), Soroban untuk ledger kredit yang bisa diaudit publik.
-3. **Target users:** AI agents (pintu x402 per-call) + developer manusia (pintu prepaid credits).
-4. **Arsitektur:** Next.js console → Express gateway (x402 + key store) → kontrak `credits`
-   (Soroban) + USDC SAC; katalog model dari OpenRouter API; routing chat via upstream OpenAI-compatible.
-5. **Kompleksitas:** dual billing (streaming vs prepaid), harga LLM baru diketahui setelah
-   respons vs x402 butuh harga di muka, proof-of-billing on-chain, key↔wallet binding ala SEP-10.
-6. **Roadmap:** MVP (sudah jalan di testnet) → user acquisition (template agent + SKILL.md,
-   komunitas Stellar Hacks) → mainnet (flip env, audit kontrak).
+1. **Problem:** AI agents cannot hold credit cards; LLM APIs sit behind subscriptions
+   and human-owned API keys. Humans, in turn, cannot audit their LLM bills.
+2. **Why Stellar:** native USDC (SAC), ~5s settlement, x402 + OZ Channels sponsoring
+   fees (agents need USDC, zero XLM), Soroban for a publicly auditable credit ledger.
+3. **Target users:** AI agents (x402 per-call door) + human developers (prepaid credits door).
+4. **Architecture:** Next.js console → Express gateway (x402 + key store) → `credits`
+   contract (Soroban) + USDC SAC; model catalog from the OpenRouter API; chat routed to an
+   OpenAI-compatible upstream.
+5. **Complexity:** dual billing (streaming vs. prepaid), LLM cost known only after the
+   response vs. x402 needing a price upfront, on-chain proof-of-billing, SEP-10-style
+   key↔wallet binding.
+6. **Roadmap:** MVP (live on testnet) → user acquisition (agent templates + SKILL.md,
+   Stellar Hacks community) → mainnet (config flip, contract audit).
 
-Detail komparasi & diferensiasi: [COMPARISON.md](./COMPARISON.md)
+Comparison & differentiation details: [COMPARISON.md](./COMPARISON.md)
