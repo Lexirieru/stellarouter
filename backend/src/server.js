@@ -262,8 +262,14 @@ app.post("/v1/chat/completions", async (req, res) => {
   }
 });
 
-app.listen(PORT, () =>
-  console.log(
-    `stellarouter gateway → http://localhost:${PORT}  (${NETWORK}, ${PRICE}/call)`
-  )
-);
+// Di serverless (Vercel) app di-export dan di-mount oleh api/index.js —
+// hanya listen saat dijalankan langsung (`node src/server.js`).
+if (!process.env.VERCEL) {
+  app.listen(PORT, () =>
+    console.log(
+      `stellarouter gateway → http://localhost:${PORT}  (${NETWORK}, ${PRICE}/call)`
+    )
+  );
+}
+
+export default app;

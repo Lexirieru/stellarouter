@@ -5,3 +5,5 @@ dist/
 *.log
 data/
 scripts/.sim-wallets.json
+.vercel
+.env*

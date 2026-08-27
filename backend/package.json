@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Stellarouter LLM gateway — pay-per-call via x402 (USDC on Stellar)",
+  "description": "Stellarouter LLM gateway \u2014 pay-per-call via x402 (USDC on Stellar)",
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
@@ -17,5 +17,8 @@
     "@x402/stellar": "^2.16.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1"
+  },
+  "engines": {
+    "node": ">=22.13"
   }
 }

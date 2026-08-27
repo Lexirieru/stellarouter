@@ -149,6 +149,9 @@ Every failure in the console is classified and shown with a category chip:
   normalization), and `getEvents` topic parsing against real `ScVal`s.
 - **CI** ([ci.yml](.github/workflows/ci.yml)): contract tests + wasm build,
   frontend lint/test/build, gateway boot check — on every push.
+- **CD** (Vercel Git integration): every push to `main` builds the console from
+  `frontend/` and promotes it to <https://stellarouter.vercel.app>; the build
+  status is reported back on each commit in GitHub.
 - **Contract deployment workflow**
   ([deploy-contract.yml](.github/workflows/deploy-contract.yml)): one-click
   testnet deploy from the Actions tab (set the `STELLAR_DEPLOYER_SECRET` repo
@@ -175,11 +178,11 @@ feed, the 500+ model catalog, and usage logs.
 
 ## Live demo
 
-**Console:** <https://stellarouter.vercel.app> — static export deployed to
-Vercel:
+**Console:** <https://stellarouter.vercel.app> — auto-deployed by Vercel from
+`main` (root directory `frontend/`). Manual deploy from a checkout:
 
 ```bash
-cd frontend && STATIC_EXPORT=1 bun run build && cd out && vercel deploy --prod
+cd frontend && vercel deploy --prod
 ```
 
 Pages that read the chain directly (Credits balance + live activity feed,
