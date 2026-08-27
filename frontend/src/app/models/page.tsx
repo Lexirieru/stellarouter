@@ -16,6 +16,9 @@ type Model = {
   created?: number;
   pricing?: { prompt?: string; completion?: string };
   architecture?: { output_modalities?: string[] };
+  /** Dari gateway: false = hanya tersedia di mainnet (testnet pakai model gratis). */
+  enabled?: boolean;
+  availability?: "now" | "mainnet";
 };
 
 const SORTS = ["Newest", "Price: low → high", "Context: high → low"];
@@ -45,6 +48,7 @@ export default function ModelsPage() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [network, setNetwork] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -53,6 +57,7 @@ export default function ModelsPage() {
         const d = await r.json();
         if (d.error) throw new Error(d.message || d.error);
         setModels(d.data || []);
+        if (typeof d.network === "string") setNetwork(d.network);
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
       } finally {
@@ -70,8 +75,12 @@ export default function ModelsPage() {
       }
     }
     const ordered = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const enabledCount = models.filter((m) => m.enabled !== false).length;
     return [
       { key: "all", label: "All", count: models.length },
+      ...(enabledCount < models.length
+        ? [{ key: "enabled", label: "Available now", count: enabledCount }]
+        : []),
       ...ordered.map(([key, count]) => ({ key, label: cap(key), count })),
     ];
   }, [models]);
@@ -81,12 +90,17 @@ export default function ModelsPage() {
     let list = models.filter((m) => {
       const inTab =
         tab === "all" ||
-        (m.architecture?.output_modalities ?? ["text"]).includes(tab);
+        (tab === "enabled"
+          ? m.enabled !== false
+          : (m.architecture?.output_modalities ?? ["text"]).includes(tab));
       const inSearch =
         !s || m.id.toLowerCase().includes(s) || m.name?.toLowerCase().includes(s);
       return inTab && inSearch;
     });
     list = [...list].sort((a, b) => {
+      // Model yang aktif di jaringan ini selalu di atas, apa pun urutannya.
+      const en = Number(b.enabled !== false) - Number(a.enabled !== false);
+      if (en !== 0) return en;
       if (sort === SORTS[1]) {
         return Number(a.pricing?.prompt ?? Infinity) - Number(b.pricing?.prompt ?? Infinity);
       }
@@ -120,6 +134,16 @@ export default function ModelsPage() {
       <p className="mt-2 text-sm text-zinc-600">
         One API for hundreds of models — pay per call in USDC on Stellar.
       </p>
+      {network && network !== "stellar:pubnet" && (
+        <p className="mt-1 text-xs text-zinc-500">
+          Testnet mode: only free models are enabled so testing never spends real
+          upstream credits. Everything else is labelled{" "}
+          <span className="rounded-full border border-black/15 px-1.5 py-px text-[10px] uppercase tracking-wide">
+            available in mainnet
+          </span>{" "}
+          and unlocks automatically on mainnet.
+        </p>
+      )}
 
       {/* Search + sort */}
       <div className="mt-4 flex items-center gap-2">
@@ -160,10 +184,26 @@ export default function ModelsPage() {
       )}
 
       <div className="mt-4 flex flex-col gap-3">
-        {pageItems.map((m) => (
-          <div key={m.id} className="rounded-xl border border-black/10 p-4">
+        {pageItems.map((m) => {
+          const enabled = m.enabled !== false;
+          return (
+          <div
+            key={m.id}
+            className={`rounded-xl border border-black/10 p-4 ${enabled ? "" : "opacity-60"}`}
+          >
             <div className="flex items-center justify-between gap-3">
-              <div className="font-semibold">{m.name}</div>
+              <div className="flex min-w-0 items-center gap-2">
+                <div className="truncate font-semibold">{m.name}</div>
+                {enabled ? (
+                  <span className="shrink-0 rounded-full bg-emerald-500/10 px-2 py-px text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+                    enabled
+                  </span>
+                ) : (
+                  <span className="shrink-0 rounded-full border border-black/15 px-2 py-px text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+                    available in mainnet
+                  </span>
+                )}
+              </div>
               <code className="shrink-0 font-mono text-[11px] text-zinc-500">
                 {m.id}
               </code>
@@ -181,13 +221,16 @@ export default function ModelsPage() {
               </div>
               <button
                 onClick={() => useInPlayground(m.id)}
-                className="shrink-0 rounded-full bg-[var(--color-darkblue)] px-3 py-1 text-xs font-medium text-white transition-opacity hover:opacity-90"
+                disabled={!enabled}
+                title={enabled ? undefined : "Available on mainnet"}
+                className="shrink-0 rounded-full bg-[var(--color-darkblue)] px-3 py-1 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Use in Playground
+                {enabled ? "Use in Playground" : "Mainnet only"}
               </button>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Pagination */}

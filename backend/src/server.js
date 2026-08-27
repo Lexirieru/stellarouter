@@ -9,6 +9,7 @@ import { agentCall, demoAgentEnabled } from "./demoAgent.js";
 import { resolveKey, createKey, listKeys, revokeKey } from "./keyStore.js";
 import { buildChallenge, verifyChallenge } from "./auth.js";
 import { logUsage, listLogs } from "./logStore.js";
+import { annotateCatalog, gateModel, enabledModels, IS_MAINNET } from "./modelPolicy.js";
 
 // Record one completion to the usage log (never throws into the request path).
 function recordUsage(completion, startedAt, mode, label) {
@@ -93,6 +94,8 @@ app.post("/demo/agent-call", async (req, res) => {
       message: "Set PAYER_SECRET_KEY (a USDC-funded demo wallet) to enable the agent demo.",
     });
   }
+  const gate = gateModel(req.body);
+  if (gate) return res.status(400).json(gate);
   try {
     const { status, data } = await agentCall(`http://localhost:${PORT}`, req.body);
     res.json({ ok: status === 200, paid: PRICE, network: NETWORK, completion: data });
@@ -150,7 +153,7 @@ app.get("/models", async (_req, res) => {
   try {
     const r = await fetch(`${base}/models?output_modalities=all`);
     const data = await r.json();
-    res.json(data);
+    res.json(annotateCatalog(data));
   } catch (err) {
     res
       .status(502)
@@ -162,7 +165,9 @@ app.get("/models", async (_req, res) => {
 app.get("/logs", (_req, res) => res.json({ logs: listLogs(100) }));
 
 // ─── Free, unpaid endpoints ──────────────────────────────────────────────────
-app.get("/health", (_req, res) => res.json({ ok: true, network: NETWORK }));
+app.get("/health", (_req, res) =>
+  res.json({ ok: true, network: NETWORK, mainnet: IS_MAINNET, enabled_models: enabledModels() })
+);
 app.get("/", (_req, res) =>
   res.json({
     name: "stellarouter",
@@ -181,6 +186,15 @@ app.get("/", (_req, res) =>
 );
 
 // ─── Human door (prepaid credits) — runs BEFORE x402 ─────────────────────────
+// ─── Model gate (runs BEFORE any payment) ────────────────────────────────────
+// Di testnet hanya model gratis/termurah yang aktif (lihat modelPolicy.js);
+// model lain ditolak 400 di sini supaya tidak ada yang membayar lalu gagal.
+app.post("/v1/chat/completions", (req, res, next) => {
+  const gate = gateModel(req.body);
+  if (gate) return res.status(400).json(gate);
+  next();
+});
+
 // If a known API key is present, charge the user's on-chain credit (Option A:
 // debit per call) and proxy. Otherwise fall through to the x402 agent door.
 app.post("/v1/chat/completions", async (req, res, next) => {

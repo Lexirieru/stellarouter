@@ -7,12 +7,8 @@ import { ModelSelect } from "./ModelSelect";
 const GATEWAY = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3001";
 const MODEL_KEY = "stellarouter:model";
 
-const FALLBACK_MODELS = [
-  "openai/gpt-4o-mini",
-  "openai/gpt-4o",
-  "anthropic/claude-3.5-sonnet",
-  "meta-llama/llama-3.1-8b-instruct",
-];
+// Fallback saat katalog belum termuat — model gratis yang aktif di testnet.
+const FALLBACK_MODELS = ["minimax/minimax-m3:free"];
 
 const CHAT_KEY = "stellarouter:chat";
 const APIKEY_KEY = "stellarouter:apikey";
@@ -26,6 +22,8 @@ export function Playground() {
   const [apiKey, setApiKey] = useState("");
   const [models, setModels] = useState<string[]>(FALLBACK_MODELS);
   const [model, setModel] = useState(FALLBACK_MODELS[0]);
+  // Kebijakan jaringan dari gateway: di testnet hanya model gratis yang aktif.
+  const [policy, setPolicy] = useState<{ network: string; mainnet: boolean } | null>(null);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Msg[]>([]);
   const [loading, setLoading] = useState(false);
@@ -59,7 +57,8 @@ export function Playground() {
     localStorage.setItem(APIKEY_KEY, v);
   }
 
-  // Load the full model catalog + restore the model chosen on the Models page.
+  // Load the catalog (only models enabled on this network are selectable) and
+  // restore the model chosen on the Models page — if it's still enabled.
   useEffect(() => {
     const saved = localStorage.getItem(MODEL_KEY);
     if (saved) setModel(saved);
@@ -67,8 +66,15 @@ export function Playground() {
       try {
         const r = await fetch(`${GATEWAY}/models`);
         const d = await r.json();
-        const ids: string[] = (d.data ?? []).map((m: { id: string }) => m.id);
-        if (ids.length) setModels(ids);
+        const all: { id: string; enabled?: boolean }[] = d.data ?? [];
+        const ids = all.filter((m) => m.enabled !== false).map((m) => m.id);
+        if (ids.length) {
+          setModels(ids);
+          setModel((cur) => (ids.includes(cur) ? cur : ids[0]));
+        }
+        if (typeof d.network === "string") {
+          setPolicy({ network: d.network, mainnet: d.network === "stellar:pubnet" });
+        }
       } catch {
         // keep fallback
       }
@@ -179,6 +185,12 @@ export function Playground() {
           ? "Pay per request in USDC via x402 (from a demo agent wallet). Settles on-chain — a few seconds per call."
           : "Charge each call against your prepaid on-chain credit using an API key."}
       </p>
+      {policy && !policy.mainnet && (
+        <p className="mt-1 text-xs text-zinc-500">
+          Testnet: only free models are enabled ({models.length} available) — the
+          full catalog unlocks on mainnet.
+        </p>
+      )}
 
       {mode === "human" && (
         <input

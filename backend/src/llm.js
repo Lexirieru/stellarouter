@@ -2,6 +2,8 @@
 // provider when configured; otherwise returns a mock so the x402 payment flow
 // is demoable end-to-end without an LLM key.
 
+import { enabledModels, IS_MAINNET } from "./modelPolicy.js";
+
 const UPSTREAM_BASE_URL = process.env.UPSTREAM_BASE_URL; // e.g. https://api.openai.com/v1
 const UPSTREAM_API_KEY = process.env.UPSTREAM_API_KEY;
 // Some upstreams namespace models by provider (e.g. 9router expects
@@ -47,28 +49,46 @@ export async function chatCompletion(body) {
     };
   }
 
-  const resp = await fetch(`${UPSTREAM_BASE_URL}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${UPSTREAM_API_KEY}`,
-    },
-    body: JSON.stringify(applyPrefix(body)),
-  });
+  // Testnet routes to free models, which get rate-limited (429) or flap (5xx)
+  // at the provider. The caller has already paid, so instead of failing we
+  // fall through the other enabled free models before giving up.
+  const candidates = IS_MAINNET
+    ? [body.model]
+    : [...new Set([body.model, ...enabledModels()].filter(Boolean))];
 
-  const text = await resp.text();
-  if (!resp.ok) {
-    throw new Error(`upstream ${resp.status}: ${text.slice(0, 300)}`);
+  let lastError;
+  for (const model of candidates) {
+    const resp = await fetch(`${UPSTREAM_BASE_URL}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${UPSTREAM_API_KEY}`,
+      },
+      body: JSON.stringify(applyPrefix({ ...body, model })),
+    });
+
+    const text = await resp.text();
+    if (!resp.ok) {
+      lastError = new Error(`upstream ${resp.status} (${model}): ${text.slice(0, 300)}`);
+      if (!RETRYABLE.has(resp.status)) throw lastError;
+      continue; // coba model aktif berikutnya
+    }
+    // Some upstreams (9router) append a trailing "data: [DONE]" after the JSON
+    // and/or leading whitespace — strip those before parsing.
+    const cleaned = text
+      .trim()
+      .replace(/\s*data:\s*\[DONE\][\s\S]*$/i, "")
+      .trim();
+    try {
+      const json = JSON.parse(cleaned);
+      if (model !== body.model) json._fallback_from = body.model;
+      return json;
+    } catch {
+      throw new Error(`upstream parse error: ${cleaned.slice(0, 200)}`);
+    }
   }
-  // Some upstreams (9router) append a trailing "data: [DONE]" after the JSON
-  // and/or leading whitespace — strip those before parsing.
-  const cleaned = text
-    .trim()
-    .replace(/\s*data:\s*\[DONE\][\s\S]*$/i, "")
-    .trim();
-  try {
-    return JSON.parse(cleaned);
-  } catch {
-    throw new Error(`upstream parse error: ${cleaned.slice(0, 200)}`);
-  }
+  throw lastError ?? new Error("upstream: no model candidates");
 }
+
+// Status upstream yang layak dicoba ulang dengan model lain.
+const RETRYABLE = new Set([408, 429, 500, 502, 503, 504]);

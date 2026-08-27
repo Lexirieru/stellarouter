@@ -45,6 +45,7 @@ disiapkan sekarang supaya begitu unlock tinggal submit).
 ## Minggu 4–5 Agustus (25–31) — Materi Level 4 & 5 (submit begitu unlock)
 
 Level 4 — produk production-grade:
+- [x] Kebijakan model per jaringan (27 Agu): testnet = model gratis saja (`TESTNET_MODELS`, fallback otomatis saat 429), katalog lain berlabel "available in mainnet"; pubnet = semua aktif
 - [ ] Per-model pricing di pintu x402 (route berbayar per tier model)
 - [ ] Streaming responses (SSE) di Playground & API
 - [ ] Rate limiting + observability (metrics per key, per model)

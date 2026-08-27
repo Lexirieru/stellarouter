@@ -128,6 +128,24 @@ cargo test -p credits      # 9 unit tests
 stellar contract build     # optimized wasm
 ```
 
+## Model policy — testnet vs mainnet
+
+Testnet USDC is free, but the upstream LLM provider bills real dollars. The
+gateway is therefore **network-aware** ([`modelPolicy.js`](backend/src/modelPolicy.js)):
+
+| Network | Enabled models | Everything else |
+|---|---|---|
+| `stellar:testnet` (now) | free models only — `minimax/minimax-m3:free`, `google/gemma-4-31b-it:free`, `nvidia/nemotron-3-super-120b-a12b:free` (override with `TESTNET_MODELS`) | shown in the catalog, labelled **available in mainnet**, disabled |
+| `stellar:pubnet` | the full catalog | — |
+
+- A request for a mainnet-only model is rejected with `400
+  model_unavailable_on_testnet` **before** any x402 payment or credit debit.
+- Free models get rate-limited at the provider, so the proxy falls through the
+  enabled list (`_fallback_from` in the response tells you when it did) — a
+  caller who already paid always gets a completion.
+- Flipping `STELLAR_NETWORK` to `stellar:pubnet` unlocks the full catalog with
+  no code change.
+
 ## Error handling (Level 2)
 
 Every failure in the console is classified and shown with a category chip:
