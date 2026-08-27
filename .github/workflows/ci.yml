@@ -1,9 +1,11 @@
 name: CI
 
+# Trigger: manual (Actions tab) sampai billing lock akun GitHub dibuka —
+# setiap push saat ini gagal 2 detik dengan "account is locked due to a billing
+# issue" dan mengotori status commit. Kembalikan ke push/pull_request setelahnya:
+#   push: { branches: [main] }
+#   pull_request:
 on:
-  push:
-    branches: [main]
-  pull_request:
   workflow_dispatch:
 
 jobs:
