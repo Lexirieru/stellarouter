@@ -34,7 +34,8 @@ disiapkan sekarang supaya begitu unlock tinggal submit).
 - [x] CI/CD GitHub Actions: `ci.yml` (cargo test + wasm + lint/test/build frontend + boot check gateway) + `deploy-contract.yml` (deploy testnet sekali-klik)
 - [x] Deploy live frontend → **Vercel** (static export): https://stellarouter.vercel.app (GitHub Pages dimatikan atas permintaan)
 - [ ] Host gateway (Railway free plan penuh — butuh keputusan user: upgrade Railway / `fly auth login` / Render)
-- [ ] Screenshot CI hijau — **terblokir billing lock GitHub Actions** ("account is locked due to a billing issue"): buka github.com/settings/billing, selesaikan, lalu `gh run rerun --repo Lexirieru/stellarouter <run-id>`
+- [x] Screenshot CI/CD running — via **Vercel Git integration** (push → build → deploy, status ✓ di commit GitHub): `ci-pipeline.png` + `ci-build-log.png`
+- [ ] GitHub Actions masih terkunci billing → `ci.yml` sementara `workflow_dispatch`; setelah billing beres: kembalikan trigger `push`/`pull_request` dan jalankan
 - [x] Test frontend: 16 unit test bun (errors, stroops, parseEvent) + 9 test kontrak
 - [x] Mobile responsive (top bar + nav scroll) + screenshot 390px
 - [x] Demo video 1:05 — `docs/demo/stellarouter-demo.mp4`

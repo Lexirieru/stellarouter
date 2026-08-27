@@ -148,7 +148,8 @@ Every failure in the console is classified and shown with a category chip:
   taxonomy (incl. `Error(Contract, #N)` parsing and wallet-kit error
   normalization), and `getEvents` topic parsing against real `ScVal`s.
 - **CI** ([ci.yml](.github/workflows/ci.yml)): contract tests + wasm build,
-  frontend lint/test/build, gateway boot check — on every push.
+  frontend lint/test/build, gateway boot check (currently on manual dispatch —
+  see the note at the top of the workflow).
 - **CD** (Vercel Git integration): every push to `main` builds the console from
   `frontend/` and promotes it to <https://stellarouter.vercel.app>; the build
   status is reported back on each commit in GitHub.
@@ -172,6 +173,8 @@ feed, the 500+ model catalog, and usage logs.
 | Playground (agent x402 / human prepaid) | ![playground](docs/screenshots/playground.png) |
 | Mobile (390px) | ![mobile playground](docs/screenshots/mobile-playground.png) ![mobile credits](docs/screenshots/mobile-credits.png) |
 | Tests — 9 contract + 16 frontend, all passing | ![tests](docs/screenshots/tests-passing.png) |
+| CI/CD — push to `main` → Vercel build + deploy, status reported on the commit | ![ci pipeline](docs/screenshots/ci-pipeline.png) |
+| CI/CD — Vercel build log for that commit (clone → `bun install` → `next build` → deploy) | ![ci build log](docs/screenshots/ci-build-log.png) |
 
 > Regenerate: run the app, connect a wallet, and capture — see
 > [docs/screenshots/README.md](docs/screenshots/README.md).
