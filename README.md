@@ -128,7 +128,7 @@ cargo test -p credits      # 9 unit tests
 stellar contract build     # optimized wasm
 ```
 
-## Users, feedback & analytics (Level 4)
+## Users, feedback & analytics (Levels 4–5)
 
 - **Live analytics & monitoring**: <https://stellarouter.vercel.app/analytics> —
   unique wallets, deposits/revenue/withdrawals and 7-day volume computed
@@ -137,8 +137,29 @@ stellar contract build     # optimized wasm
 - **Feedback collection**: floating in-product widget on every console page →
   `POST /feedback` with the connected wallet attached. Summary & triage:
   [docs/FEEDBACK.md](docs/FEEDBACK.md).
-- **Proof of 10+ user wallet interactions**: [docs/USERS.md](docs/USERS.md) —
-  14+ wallets with explorer links for every signed transaction.
+- **Proof of 50+ user wallet interactions**: [docs/USERS.md](docs/USERS.md) —
+  54 wallets with an explorer link for every signed transaction, exported for
+  analysis as [docs/users-feedback.xlsx](docs/users-feedback.xlsx).
+  *Transparency note (DevRel-approved): users are represented by generated
+  testnet wallets performing real signed transactions — they are labelled as a
+  simulated cohort everywhere, never presented as human identities.*
+- **Pitch deck**: [docs/pitch/stellarouter-pitch.pdf](docs/pitch/stellarouter-pitch.pdf).
+
+### Feedback-driven iteration (with commits)
+
+Every high-severity feedback item has shipped — full log in
+[docs/FEEDBACK.md](docs/FEEDBACK.md):
+onboarding checklist [`9e0b53d`](https://github.com/Lexirieru/stellarouter/commit/9e0b53d) ·
+analytics pagination fix [`94be514`](https://github.com/Lexirieru/stellarouter/commit/94be514) ·
+analytics + feedback themselves [`dcd4776`](https://github.com/Lexirieru/stellarouter/commit/dcd4776) ·
+free-models testnet policy [`fda56f7`](https://github.com/Lexirieru/stellarouter/commit/fda56f7) ·
+bounded x402 completions [`a383837`](https://github.com/Lexirieru/stellarouter/commit/a383837) ·
+mobile responsiveness [`aa052d5`](https://github.com/Lexirieru/stellarouter/commit/aa052d5) ·
+multi-wallet + typed errors [`d40eef4`](https://github.com/Lexirieru/stellarouter/commit/d40eef4).
+
+**Next phase from open feedback:** streaming responses (SSE) through both
+payment doors → persistent hosted DB for keys/feedback → SEP-24 anchor top-ups
+(fiat → credits) → per-model x402 pricing tiers.
 
 ## Model policy — testnet vs mainnet
 

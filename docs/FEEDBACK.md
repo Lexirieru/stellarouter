@@ -29,11 +29,29 @@
 | 8 | Payment succeeded but the demo agent errored on serverless | medium | Demo agent now pays the deployment's own public URL instead of localhost |
 | 9 | "Which wallet am I connected with?" was invisible | low | Wallet id shown in the connect button tooltip; SWK session restore keeps it sticky |
 
-## Still open (roadmap)
+| 10 | "How do I even get testnet USDC to try this?" — onboarding friction | high | State-aware **Get Started** checklist on the Playground: connect → faucets (friendbot + Circle, links prefilled) → top up; steps verify themselves on-chain ([`9e0b53d`](https://github.com/Lexirieru/stellarouter/commit/9e0b53d)) |
 
-- Streaming responses (SSE) — requested for long completions.
-- Persistent feedback/keys store on serverless (hosted DB).
-- SEP-24 anchor top-ups so users without USDC can fund credits.
+## Iteration summary (Level 5)
+
+Every high-severity item collected through the widget and the pilot has been
+shipped, each traceable to a commit:
+
+- Onboarding checklist → [`9e0b53d`](https://github.com/Lexirieru/stellarouter/commit/9e0b53d)
+- Analytics accuracy (getEvents cursor pagination) → [`94be514`](https://github.com/Lexirieru/stellarouter/commit/94be514)
+- Feedback + analytics/monitoring themselves → [`dcd4776`](https://github.com/Lexirieru/stellarouter/commit/dcd4776)
+- Free-models-on-testnet policy + fallback → [`fda56f7`](https://github.com/Lexirieru/stellarouter/commit/fda56f7)
+- Bounded completions for flat-price x402 → [`a383837`](https://github.com/Lexirieru/stellarouter/commit/a383837)
+- Mobile responsiveness → [`aa052d5`](https://github.com/Lexirieru/stellarouter/commit/aa052d5)
+- Multi-wallet + typed errors → [`d40eef4`](https://github.com/Lexirieru/stellarouter/commit/d40eef4)
+
+## Next phase (planned from open feedback)
+
+- **Streaming responses (SSE)** — the most-requested feature; upstream already
+  streams, the gateway will pipe chunks through both doors.
+- **Persistent feedback/keys store** — move the serverless SQLite stores to a
+  hosted DB (Turso/Postgres) so entries survive cold starts.
+- **SEP-24 anchor top-ups** — fund credits from fiat for users without USDC.
+- **Per-model x402 pricing tiers** — price routes per model instead of one flat rate.
 
 ## Wallet-verified usage
 
