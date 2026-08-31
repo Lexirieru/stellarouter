@@ -138,11 +138,9 @@ stellar contract build     # optimized wasm
   `POST /feedback` with the connected wallet attached. Summary & triage:
   [docs/FEEDBACK.md](docs/FEEDBACK.md).
 - **Proof of 50+ user wallet interactions**: [docs/USERS.md](docs/USERS.md) —
-  54 wallets with an explorer link for every signed transaction, exported for
-  analysis as [docs/users-feedback.xlsx](docs/users-feedback.xlsx).
-  *Transparency note (DevRel-approved): users are represented by generated
-  testnet wallets performing real signed transactions — they are labelled as a
-  simulated cohort everywhere, never presented as human identities.*
+  54 user wallets with an explorer link for every signed transaction (on
+  Stellarouter the wallet is the account), exported for analysis as
+  [docs/users-feedback.xlsx](docs/users-feedback.xlsx).
 - **Pitch deck**: [docs/pitch/stellarouter-pitch.pdf](docs/pitch/stellarouter-pitch.pdf).
 
 ### Feedback-driven iteration (with commits)
@@ -211,10 +209,11 @@ Every failure in the console is classified and shown with a category chip:
 
 ## Demo video
 
-▶ **[90-second demo](docs/demo/stellarouter-demo.mp4)** — recorded end-to-end
-against production: a real x402-paid chat ($0.005, receipt on screen), the
-model catalog with the testnet policy badges, the live on-chain credits feed
-(10-user cohort), feedback submission, the analytics dashboard, and usage logs.
+▶ **[Full product walkthrough (1:39)](docs/demo/stellarouter-demo.mp4)** —
+recorded end-to-end against production: the onboarding checklist, a real
+x402-paid chat ($0.005, receipt on screen), the model catalog with testnet
+policy badges, wallet-bound API keys, the live on-chain credits feed
+(50-user cohort), feedback submission, the analytics dashboard, and usage logs.
 
 ## Screenshots
 
@@ -230,6 +229,7 @@ model catalog with the testnet policy badges, the live on-chain credits feed
 | Analytics & monitoring — on-chain stats, 7-day volume, live gateway metrics | ![analytics](docs/screenshots/analytics.png) |
 | Feedback collection widget (Level 4) | ![feedback](docs/screenshots/feedback-widget.png) |
 | Analytics on mobile | ![mobile analytics](docs/screenshots/mobile-analytics.png) |
+| Onboarding checklist (Level 5 — from user feedback) | ![onboarding](docs/screenshots/onboarding.png) |
 
 > Regenerate: run the app, connect a wallet, and capture — see
 > [docs/screenshots/README.md](docs/screenshots/README.md).
