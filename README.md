@@ -128,6 +128,18 @@ cargo test -p credits      # 9 unit tests
 stellar contract build     # optimized wasm
 ```
 
+## Users, feedback & analytics (Level 4)
+
+- **Live analytics & monitoring**: <https://stellarouter.vercel.app/analytics> —
+  unique wallets, deposits/revenue/withdrawals and 7-day volume computed
+  client-side from contract events, plus live gateway metrics (`/metrics`) and
+  recent feedback. Gateway liveness: `/health`.
+- **Feedback collection**: floating in-product widget on every console page →
+  `POST /feedback` with the connected wallet attached. Summary & triage:
+  [docs/FEEDBACK.md](docs/FEEDBACK.md).
+- **Proof of 10+ user wallet interactions**: [docs/USERS.md](docs/USERS.md) —
+  14+ wallets with explorer links for every signed transaction.
+
 ## Model policy — testnet vs mainnet
 
 Testnet USDC is free, but the upstream LLM provider bills real dollars. The
@@ -200,16 +212,16 @@ feed, the 500+ model catalog, and usage logs.
 ## Live demo
 
 **Console:** <https://stellarouter.vercel.app> — auto-deployed by Vercel from
-`main` (root directory `frontend/`). Manual deploy from a checkout:
+`main` (root directory `frontend/`).
 
-```bash
-cd frontend && vercel deploy --prod
-```
+**Gateway:** <https://stellarouter-gateway.vercel.app> — the Express gateway as
+a Vercel serverless function (`backend/api/index.js`, 60s max duration for
+x402 settlement). Deploy: `cd backend && vercel deploy --prod`.
 
-Pages that read the chain directly (Credits balance + live activity feed,
-wallet connect) are fully live. The Playground/Models/Logs pages talk to the
-gateway: set `NEXT_PUBLIC_GATEWAY_URL=https://…` at build time once the
-gateway is hosted, or run it locally (`cd backend && npm start`).
+The full product is live end-to-end: the Playground pays real x402 USDC on
+testnet through the hosted gateway, and Credits/Analytics read the chain
+directly. (`NEXT_PUBLIC_GATEWAY_URL` is set on the Vercel project; override it
+to point a build at your own gateway.)
 
 ## License
 

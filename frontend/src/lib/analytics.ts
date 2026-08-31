@@ -15,21 +15,24 @@ export type ChainStats = {
 
 const WINDOW_LEDGERS = 120_000; // ≈ 7 days at ~5s
 const FALLBACK_LEDGERS = 17_280; // ≈ 1 day
-const MAX_PAGES = 20;
+const MAX_PAGES = 40;
 
 async function collectEvents(startLedger: number): Promise<CreditEvent[]> {
   const out: CreditEvent[] = [];
   let cursor: string | undefined;
+  // The RPC paginates by the LEDGER RANGE it scanned, not by matches — a page
+  // over a quiet slice returns 0 events plus a cursor. Keep following the
+  // cursor until the RPC stops handing one out (or we hit the page cap).
   for (let page = 0; page < MAX_PAGES; page++) {
-    const req = cursor
-      ? { cursor, filters: [{ type: "contract" as const, contractIds: [CREDITS_CONTRACT_ID] }], limit: 100 }
-      : { startLedger, filters: [{ type: "contract" as const, contractIds: [CREDITS_CONTRACT_ID] }], limit: 100 };
-    const resp = await rpcServer.getEvents(req);
+    const filters = [{ type: "contract" as const, contractIds: [CREDITS_CONTRACT_ID] }];
+    const resp = await rpcServer.getEvents(
+      cursor ? { cursor, filters, limit: 100 } : { startLedger, filters, limit: 100 }
+    );
     const events = (resp.events ?? [])
       .map((ev) => parseEvent(ev as unknown as Parameters<typeof parseEvent>[0]))
       .filter((e): e is CreditEvent => e !== null);
     out.push(...events);
-    if (!resp.events || resp.events.length < 100 || !resp.cursor) break;
+    if (!resp.cursor) break;
     cursor = resp.cursor;
   }
   return out;

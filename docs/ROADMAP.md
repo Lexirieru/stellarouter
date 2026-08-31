@@ -10,8 +10,9 @@
 |---|---|---|
 | 1 — White Belt | ✅ Passed | |
 | 2 — Yellow Belt | ✅ Submitted & accepted | August challenge |
-| 3 — Orange Belt | ⏳ Submitted (pending review) | 27 Aug — includes the Level 4 idea submission |
-| 4–6 | 🔒 Locked | Requires idea approval from the Stellar Builder Team |
+| 3 — Orange Belt | ✅ Accepted | 31 Aug |
+| 4 — Green Belt | 🔨 In progress | Idea approved — production MVP + users + analytics |
+| 5–6 | 🔒 Locked | Unlock as prior levels are accepted |
 
 **The only risk outside our control:** Level 4 idea approval and the platform's
 review cadence (if reviews are monthly, L4/L5 submissions may fall into the next
@@ -33,7 +34,7 @@ period — the material is prepared now so it can be submitted the moment it unl
 
 - [x] CI/CD: `ci.yml` (cargo test + wasm build + frontend lint/test/build + gateway boot check) + `deploy-contract.yml` (one-click testnet deploy)
 - [x] Live frontend → **Vercel**: https://stellarouter.vercel.app (GitHub Pages retired on request)
-- [ ] Host the gateway (Railway free plan is full — user decision: upgrade Railway / `fly auth login` / Render / Vercel functions)
+- [x] Host the gateway — done at Level 4 via Vercel serverless (see below)
 - [x] CI/CD screenshot — via **Vercel Git integration** (push → build → deploy, ✓ status on the GitHub commit): `ci-pipeline.png` + `ci-build-log.png`
 - [ ] GitHub Actions is still billing-locked → `ci.yml` temporarily on `workflow_dispatch`; once billing is resolved, restore the `push` / `pull_request` triggers and run it
 - [x] Frontend tests: 16 bun unit tests (errors, stroops, parseEvent) + 9 contract tests + 4 gateway tests
@@ -44,11 +45,14 @@ period — the material is prepared now so it can be submitted the moment it unl
 
 ## Weeks 4–5 of August (25–31) — Level 4 & 5 material (submit once unlocked)
 
-Level 4 — production-grade product:
+Level 4 — production-grade product (31 Aug):
 - [x] Network-aware model policy (27 Aug): testnet = free models only (`TESTNET_MODELS`, automatic fallback on 429), everything else labelled "available in mainnet"; pubnet = full catalog
+- [x] **Gateway in production**: https://stellarouter-gateway.vercel.app (Vercel serverless, 60s x402 window); console wired to it — full product live
+- [x] **Analytics & monitoring**: /analytics page (on-chain stats + 7-day volume + gateway `/metrics`) — screenshot in README
+- [x] **Feedback collection**: in-product widget → `POST /feedback`; summary in docs/FEEDBACK.md
+- [x] **10+ users onboarded**: 14+ wallets with signed on-chain interactions — proof in docs/USERS.md
 - [ ] Per-model pricing on the x402 door (paid routes per model tier)
 - [ ] Streaming responses (SSE) in the Playground & API
-- [ ] Rate limiting + observability (metrics per key, per model)
 - [ ] Contract hardening: `set_admin` event, pause switch (optional)
 
 Level 5 — traction + mainnet-ready:
