@@ -190,9 +190,10 @@ Every failure in the console is classified and shown with a category chip:
 
 ## Demo video
 
-▶ **[1-minute demo](docs/demo/stellarouter-demo.mp4)** — a real x402-paid chat
-($0.005, receipt on screen), the multi-wallet modal, live on-chain credits
-feed, the 500+ model catalog, and usage logs.
+▶ **[90-second demo](docs/demo/stellarouter-demo.mp4)** — recorded end-to-end
+against production: a real x402-paid chat ($0.005, receipt on screen), the
+model catalog with the testnet policy badges, the live on-chain credits feed
+(10-user cohort), feedback submission, the analytics dashboard, and usage logs.
 
 ## Screenshots
 
@@ -205,6 +206,9 @@ feed, the 500+ model catalog, and usage logs.
 | Tests — 9 contract + 16 frontend, all passing | ![tests](docs/screenshots/tests-passing.png) |
 | CI/CD — push to `main` → Vercel build + deploy, status reported on the commit | ![ci pipeline](docs/screenshots/ci-pipeline.png) |
 | CI/CD — Vercel build log for that commit (clone → `bun install` → `next build` → deploy) | ![ci build log](docs/screenshots/ci-build-log.png) |
+| Analytics & monitoring — on-chain stats, 7-day volume, live gateway metrics | ![analytics](docs/screenshots/analytics.png) |
+| Feedback collection widget (Level 4) | ![feedback](docs/screenshots/feedback-widget.png) |
+| Analytics on mobile | ![mobile analytics](docs/screenshots/mobile-analytics.png) |
 
 > Regenerate: run the app, connect a wallet, and capture — see
 > [docs/screenshots/README.md](docs/screenshots/README.md).
