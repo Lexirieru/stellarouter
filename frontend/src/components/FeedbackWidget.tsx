@@ -70,6 +70,14 @@ export function FeedbackWidget() {
           {state === "error" && (
             <p className="mt-1 text-xs text-red-600">{errorMsg}</p>
           )}
+          <a
+            href="https://docs.google.com/forms/d/e/1FAIpQLSeRO3QSebcOD6j_tmppQ17q16FOmTVm6t_zds9hKwRP0XNjzw/viewform"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 block text-[11px] text-zinc-500 underline underline-offset-2 hover:text-zinc-700"
+          >
+            Prefer a form? 1-minute Google Form ↗
+          </a>
           <div className="mt-2 flex items-center justify-between">
             <span className="text-[11px] text-zinc-500">
               {address ? "Signed as your wallet" : "Anonymous"}

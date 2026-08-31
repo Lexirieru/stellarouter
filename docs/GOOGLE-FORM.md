@@ -21,4 +21,4 @@ and [users-feedback.xlsx](./users-feedback.xlsx) — join on wallet address.
 Ratings and written feedback come from real respondents only (the in-product
 Feedback widget mirrors the same fields into the gateway's `/feedback` store).
 
-**Form link:** _(paste here after creating)_
+**Form link:** <https://docs.google.com/forms/d/e/1FAIpQLSeRO3QSebcOD6j_tmppQ17q16FOmTVm6t_zds9hKwRP0XNjzw/viewform>

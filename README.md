@@ -135,7 +135,10 @@ stellar contract build     # optimized wasm
   client-side from contract events, plus live gateway metrics (`/metrics`) and
   recent feedback. Gateway liveness: `/health`.
 - **Feedback collection**: floating in-product widget on every console page →
-  `POST /feedback` with the connected wallet attached. Summary & triage:
+  `POST /feedback` with the connected wallet attached, plus a
+  [1-minute Google Form](https://docs.google.com/forms/d/e/1FAIpQLSeRO3QSebcOD6j_tmppQ17q16FOmTVm6t_zds9hKwRP0XNjzw/viewform)
+  (name, email, wallet, rating — responses exported to
+  [docs/users-feedback.xlsx](docs/users-feedback.xlsx)). Summary & triage:
   [docs/FEEDBACK.md](docs/FEEDBACK.md).
 - **Proof of 50+ user wallet interactions**: [docs/USERS.md](docs/USERS.md) —
   54 user wallets with an explorer link for every signed transaction (on
