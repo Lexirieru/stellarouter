@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { WalletProvider, CursorBubble } from "@stellarouter/ui";
+import { FeedbackWidget } from "@/components/FeedbackWidget";
 import { ConsoleNav } from "@/components/ConsoleNav";
 import "@stellarouter/ui/brand.css";
 import "@stellarouter/ui/cursor.css";
@@ -24,6 +25,7 @@ export default function RootLayout({
             <ConsoleNav />
             <main className="flex-1 overflow-y-auto">{children}</main>
           </div>
+          <FeedbackWidget />
         </WalletProvider>
       </body>
     </html>

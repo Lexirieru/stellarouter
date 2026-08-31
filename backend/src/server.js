@@ -10,6 +10,7 @@ import { resolveKey, createKey, listKeys, revokeKey } from "./keyStore.js";
 import { buildChallenge, verifyChallenge } from "./auth.js";
 import { logUsage, listLogs } from "./logStore.js";
 import { annotateCatalog, gateModel, enabledModels, IS_MAINNET } from "./modelPolicy.js";
+import { addFeedback, listFeedback, feedbackStats } from "./feedbackStore.js";
 
 // Record one completion to the usage log (never throws into the request path).
 function recordUsage(completion, startedAt, mode, label) {
@@ -97,7 +98,12 @@ app.post("/demo/agent-call", async (req, res) => {
   const gate = gateModel(req.body);
   if (gate) return res.status(400).json(gate);
   try {
-    const { status, data } = await agentCall(`http://localhost:${PORT}`, req.body);
+    // On serverless there is no local listener — the demo agent must pay the
+    // public URL of this very deployment.
+    const base = process.env.VERCEL
+      ? `https://${req.get("host")}`
+      : `http://localhost:${PORT}`;
+    const { status, data } = await agentCall(base, req.body);
     res.json({ ok: status === 200, paid: PRICE, network: NETWORK, completion: data });
   } catch (err) {
     res
@@ -163,6 +169,55 @@ app.get("/models", async (_req, res) => {
 
 // Usage logs (demo: global; production would scope per account).
 app.get("/logs", (_req, res) => res.json({ logs: listLogs(100) }));
+
+// ─── Feedback (product validation) ───────────────────────────────────────────
+app.post("/feedback", (req, res) => {
+  const { rating, text, wallet, page } = req.body ?? {};
+  const r = Number(rating);
+  if (!Number.isInteger(r) || r < 1 || r > 5) {
+    return res.status(400).json({ error: "bad_rating", message: "rating must be an integer 1–5" });
+  }
+  if (typeof text !== "string" || text.trim().length < 3 || text.length > 2000) {
+    return res.status(400).json({ error: "bad_text", message: "text must be 3–2000 characters" });
+  }
+  addFeedback({
+    rating: r,
+    text: text.trim(),
+    wallet: typeof wallet === "string" && /^G[A-Z2-7]{55}$/.test(wallet) ? wallet : null,
+    page: typeof page === "string" ? page.slice(0, 64) : null,
+  });
+  res.json({ ok: true });
+});
+app.get("/feedback", (_req, res) => res.json({ feedback: listFeedback(50) }));
+
+// ─── Metrics (monitoring) — request/usage aggregates from the usage log ──────
+const BOOT_AT = Date.now();
+app.get("/metrics", (_req, res) => {
+  const logs = listLogs(1000);
+  const byMode = {};
+  const byModel = {};
+  let cost = 0, speedSum = 0, speedN = 0, tokensOut = 0;
+  for (const l of logs) {
+    byMode[l.mode] = (byMode[l.mode] || 0) + 1;
+    if (l.model) byModel[l.model] = (byModel[l.model] || 0) + 1;
+    if (typeof l.cost === "number") cost += l.cost;
+    if (typeof l.speed === "number" && l.speed > 0) { speedSum += l.speed; speedN++; }
+    tokensOut += l.completionTokens || 0;
+  }
+  res.json({
+    ok: true,
+    network: NETWORK,
+    uptimeSeconds: Math.round((Date.now() - BOOT_AT) / 1000),
+    serverless: Boolean(process.env.VERCEL),
+    calls: { total: logs.length, byMode, byModel },
+    upstreamCostUSD: Number(cost.toFixed(6)),
+    avgTokensPerSecond: speedN ? Number((speedSum / speedN).toFixed(1)) : null,
+    completionTokens: tokensOut,
+    feedback: feedbackStats(),
+    priceUSDCPerCall: PRICE,
+    enabledModels: enabledModels(),
+  });
+});
 
 // ─── Free, unpaid endpoints ──────────────────────────────────────────────────
 app.get("/health", (_req, res) =>
