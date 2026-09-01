@@ -120,11 +120,17 @@ Try it:
 | `debit(user, amount)` | admin | gateway charges usage → treasury (emits `debit`) |
 | `withdraw(user, amount)` | user | refund unused credit (emits `withdraw`) |
 | `collect(to, amount)` | admin | sweep treasury revenue (emits `collect`) |
-| `balance/treasury/admin/token` | — | views |
+| `set_paused(paused)` | admin | incident switch — blocks deposits and debits, **never** withdrawals |
+| `set_admin(new_admin)` | admin | rotate the operator key (emits `admin`) |
+| `balance/treasury/admin/token/paused` | — | views |
+
+**Solvency invariant:** `contract USDC = Σ user balances + treasury`. `collect`
+is bounded by treasury and `withdraw` by the caller's own balance, so the
+operator can never reach user credit — see the [security review](docs/SECURITY-REVIEW.md).
 
 ```bash
 cd smart-contract
-cargo test -p credits      # 9 unit tests
+cargo test -p credits      # 11 unit tests
 stellar contract build     # optimized wasm
 ```
 
@@ -162,6 +168,46 @@ multi-wallet + typed errors [`d40eef4`](https://github.com/Lexirieru/stellaroute
 payment doors → persistent hosted DB for keys/feedback → SEP-24 anchor top-ups
 (fiat → credits) → per-model x402 pricing tiers.
 
+## Fee sponsorship — gasless transactions (Level 6)
+
+Users hold USDC but often no XLM, so Stellarouter pays their network fees. The
+user signs their own transaction — staying the source account and the sole
+authorizer — and the gateway wraps it in a **fee-bump transaction** (CAP-15)
+and pays the fee. Toggle *Gasless* on the Credits page; `POST /sponsor` does
+the work, and `/health` advertises whether a funded sponsor key is present.
+
+The sponsor endpoint is allow-listed per contract **and** per function
+([`sponsor.js`](backend/src/sponsor.js)): only `deposit` / `withdraw` on our
+contract and the USDC `changeTrust` are sponsored — payments, foreign
+trustlines, foreign contracts and even our own `collect` / `set_admin` are
+refused, so the sponsor key cannot be farmed for arbitrary fees. Backed by 5
+unit tests and a per-IP rate limit.
+
+**Verified on-chain** ([`verify-sponsorship.js`](backend/scripts/verify-sponsorship.js)):
+
+```text
+tx         : 413c5535…4255c10  (successful=true)
+fee_account: GDYS2IMC…UR7UTC  = SPONSOR ✓
+source     : GCMQIJY4…X3WASK  = USER ✓
+user XLM delta   : 0.0000000  ← UNCHANGED (gasless)
+sponsor XLM delta: -0.0017326 ← sponsor paid
+```
+
+[View the transaction](https://stellar.expert/explorer/testnet/tx/413c5535614b3490b98ecb72f6e1c53abfbd8994db901a7f46ee0e5294255c10)
+— Horizon reports `fee_account` and `source_account` separately, which is what
+makes the sponsorship provable after the fact.
+
+## Documentation
+
+| Document | What it covers |
+|---|---|
+| [User guide](docs/USER-GUIDE.md) | Both doors end to end, API reference, troubleshooting |
+| [Security review](docs/SECURITY-REVIEW.md) | Contract + gateway review, 9 findings, solvency invariant, pre-mainnet checklist, mentor sign-off |
+| [Mainnet runbook](docs/MAINNET-RUNBOOK.md) | Verified pubnet constants, deploy, config flip, smoke test, incident response |
+| [Fee-sponsorship tutorial](docs/blog/fee-sponsorship-on-stellar.md) | Ecosystem contribution — gasless transactions done safely, with code and tests |
+| [Comparison](docs/COMPARISON.md) · [Roadmap](docs/ROADMAP.md) | Positioning and plan |
+| [Users](docs/USERS.md) · [Feedback](docs/FEEDBACK.md) | On-chain adoption proof and feedback iteration |
+
 ## Model policy — testnet vs mainnet
 
 Testnet USDC is free, but the upstream LLM provider bills real dollars. The
@@ -194,8 +240,11 @@ Every failure in the console is classified and shown with a category chip:
 
 ## Testing & CI
 
-- **Contract**: 9 Rust unit tests (`cargo test -p credits`) — auth on every
-  privileged path, balance/treasury invariants, full lifecycle.
+- **Contract**: 11 Rust unit tests (`cargo test -p credits`) — auth on every
+  privileged path, balance/treasury invariants, full lifecycle, pause
+  semantics (withdrawals stay open while paused).
+- **Gateway**: 9 unit tests (`bun test src`) — fee-sponsorship allow-list and
+  the network model policy.
 - **Frontend**: 16 unit tests (`bun test src`) — stroop conversion, the error
   taxonomy (incl. `Error(Contract, #N)` parsing and wallet-kit error
   normalization), and `getEvents` topic parsing against real `ScVal`s.
