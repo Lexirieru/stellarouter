@@ -11,6 +11,8 @@ import { buildChallenge, verifyChallenge } from "./auth.js";
 import { logUsage, listLogs } from "./logStore.js";
 import { annotateCatalog, gateModel, enabledModels, IS_MAINNET } from "./modelPolicy.js";
 import { addFeedback, listFeedback, feedbackStats } from "./feedbackStore.js";
+import { rateLimit } from "./rateLimit.js";
+import { sponsorAndSubmit } from "./sponsor.js";
 
 // Record one completion to the usage log (never throws into the request path).
 function recordUsage(completion, startedAt, mode, label) {
@@ -88,7 +90,7 @@ app.use((req, res, next) => {
 
 // Demo agent (for the Playground): pays the gateway via x402 server-side using
 // a demo wallet, then returns the completion. Real agents call /v1/... directly.
-app.post("/demo/agent-call", async (req, res) => {
+app.post("/demo/agent-call", rateLimit({ windowMs: 60 * 60 * 1000, max: 12 }), async (req, res) => {
   if (!demoAgentEnabled) {
     return res.status(503).json({
       error: "demo_disabled",
@@ -171,7 +173,7 @@ app.get("/models", async (_req, res) => {
 app.get("/logs", (_req, res) => res.json({ logs: listLogs(100) }));
 
 // ─── Feedback (product validation) ───────────────────────────────────────────
-app.post("/feedback", (req, res) => {
+app.post("/feedback", rateLimit({ windowMs: 60 * 60 * 1000, max: 6 }), (req, res) => {
   const { rating, text, wallet, page } = req.body ?? {};
   const r = Number(rating);
   if (!Number.isInteger(r) || r < 1 || r > 5) {
@@ -189,6 +191,25 @@ app.post("/feedback", (req, res) => {
   res.json({ ok: true });
 });
 app.get("/feedback", (_req, res) => res.json({ feedback: listFeedback(50) }));
+
+// ─── Fee sponsorship (gasless deposits/withdrawals via fee bump) ─────────────
+// The user signs; the gateway pays the network fee. Strictly allow-listed to
+// Stellarouter transactions — see src/sponsor.js.
+app.post("/sponsor", rateLimit({ windowMs: 60 * 60 * 1000, max: 20 }), async (req, res) => {
+  if (!process.env.GATEWAY_ADMIN_SECRET) {
+    return res.status(503).json({ error: "sponsor_unavailable", message: "Sponsor key not configured." });
+  }
+  const { xdr } = req.body ?? {};
+  if (typeof xdr !== "string" || xdr.length > 20_000) {
+    return res.status(400).json({ error: "bad_xdr", message: "Send { xdr } — the signed transaction to sponsor." });
+  }
+  try {
+    const { hash } = await sponsorAndSubmit(xdr, process.env.GATEWAY_ADMIN_SECRET);
+    res.json({ ok: true, hash, fee_paid_by: "gateway" });
+  } catch (err) {
+    res.status(err.status ?? 502).json({ error: "sponsor_error", message: String(err?.message ?? err) });
+  }
+});
 
 // ─── Metrics (monitoring) — request/usage aggregates from the usage log ──────
 const BOOT_AT = Date.now();
@@ -221,7 +242,14 @@ app.get("/metrics", (_req, res) => {
 
 // ─── Free, unpaid endpoints ──────────────────────────────────────────────────
 app.get("/health", (_req, res) =>
-  res.json({ ok: true, network: NETWORK, mainnet: IS_MAINNET, enabled_models: enabledModels() })
+  res.json({
+    ok: true,
+    network: NETWORK,
+    mainnet: IS_MAINNET,
+    enabled_models: enabledModels(),
+    // Fee sponsorship is available when the gateway holds a funded sponsor key.
+    sponsor: Boolean(process.env.GATEWAY_ADMIN_SECRET),
+  })
 );
 app.get("/", (_req, res) =>
   res.json({

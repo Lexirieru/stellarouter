@@ -10,9 +10,11 @@ import {
   buildAddTrustline,
   submit,
   submitClassic,
+  sponsorSubmit,
   toStroops,
   fromStroops,
 } from "@/lib/credits";
+import { GATEWAY } from "@/lib/gateway";
 import { describeError, errorLabel, type UiError } from "@/lib/errors";
 import { TxStatus, type TxState } from "@/components/TxStatus";
 import { ActivityFeed } from "@/components/ActivityFeed";
@@ -28,6 +30,25 @@ export default function CreditsPage() {
   const [busy, setBusy] = useState<Busy>(null);
   const [uiError, setUiError] = useState<UiError | null>(null);
   const [txState, setTxState] = useState<TxState | null>(null);
+  // Fee sponsorship: the gateway fee-bumps the user's signed transaction, so
+  // topping up costs the user no XLM. Only offered when the gateway reports a
+  // funded sponsor key.
+  const [sponsorAvailable, setSponsorAvailable] = useState(false);
+  const [gasless, setGasless] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch(`${GATEWAY}/health`);
+        const d = await r.json();
+        setSponsorAvailable(Boolean(d?.sponsor));
+      } catch {
+        setSponsorAvailable(false);
+      }
+    })();
+  }, []);
+
+  const useGasless = sponsorAvailable && gasless;
 
   const refresh = useCallback(async () => {
     if (!address) return;
@@ -69,9 +90,11 @@ export default function CreditsPage() {
         setTxState({ label: "Enable USDC", phase: "signing" });
         const txdr = await buildAddTrustline(address);
         const signed = await signTransaction(txdr);
-        await submitClassic(signed, (u) =>
-          setTxState({ label: "Enable USDC", ...u })
-        );
+        const onTrust = (u: Omit<TxState, "label">) =>
+          setTxState({ label: "Enable USDC", ...u });
+        await (useGasless
+          ? sponsorSubmit(signed, onTrust)
+          : submitClassic(signed, onTrust));
         setTrustline(true);
       }
 
@@ -92,7 +115,11 @@ export default function CreditsPage() {
       setTxState({ label: "Top up", phase: "signing" });
       const dxdr = await buildDeposit(address, toStroops(usdc));
       const signed = await signTransaction(dxdr);
-      await submit(signed, (u) => setTxState({ label: "Top up", ...u }));
+      const onDeposit = (u: Omit<TxState, "label">) =>
+        setTxState({ label: "Top up", ...u });
+      await (useGasless
+        ? sponsorSubmit(signed, onDeposit)
+        : submit(signed, onDeposit));
       await refresh();
     } catch (e) {
       setUiError(describeError(e));
@@ -114,7 +141,11 @@ export default function CreditsPage() {
     try {
       const xdr = await buildWithdraw(address, credit);
       const signed = await signTransaction(xdr);
-      await submit(signed, (u) => setTxState({ label: "Refund", ...u }));
+      const onRefund = (u: Omit<TxState, "label">) =>
+        setTxState({ label: "Refund", ...u });
+      await (useGasless
+        ? sponsorSubmit(signed, onRefund)
+        : submit(signed, onRefund));
       await refresh();
     } catch (e) {
       setUiError(describeError(e));
@@ -211,6 +242,22 @@ export default function CreditsPage() {
                       : "Top up"}
                 </button>
               </div>
+
+              {sponsorAvailable && (
+                <label className="mt-3 flex items-start gap-2 text-xs text-zinc-600">
+                  <input
+                    type="checkbox"
+                    checked={gasless}
+                    onChange={(e) => setGasless(e.target.checked)}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    <b>Gasless</b> — the gateway fee-bumps your signed
+                    transaction and pays the network fee, so this costs you no
+                    XLM. You still sign; only the fee is sponsored.
+                  </span>
+                </label>
+              )}
             </div>
 
             {/* Transaction status: signing → submitting → pending → success/failed */}

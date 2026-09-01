@@ -5,6 +5,7 @@
 
 import * as S from "@stellar/stellar-sdk";
 import { stellarConfig } from "@stellarouter/ui";
+import { GATEWAY } from "./gateway";
 
 const RPC_URL =
   process.env.NEXT_PUBLIC_STELLAR_RPC_URL || stellarConfig.rpcUrl;
@@ -139,6 +140,37 @@ export function buildWithdraw(user: string, stroops: bigint): Promise<string> {
     S.Address.fromString(user).toScVal(),
     S.nativeToScVal(stroops, { type: "i128" })
   );
+}
+
+/**
+ * Gasless path: hand the signed transaction to the gateway, which wraps it in a
+ * fee-bump (CAP-15) and pays the network fee. The user still signs — they remain
+ * the source account and authorize the state change — they just don't pay the fee.
+ * Works for both the Soroban deposit/withdraw and the classic USDC trustline.
+ */
+export async function sponsorSubmit(
+  signedXdr: string,
+  onUpdate?: OnTxUpdate
+): Promise<string> {
+  onUpdate?.({ phase: "submitting" });
+  let data: { ok?: boolean; hash?: string; message?: string; error?: string };
+  try {
+    const res = await fetch(`${GATEWAY}/sponsor`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ xdr: signedXdr }),
+    });
+    data = await res.json();
+    if (!res.ok || !data.ok || !data.hash) {
+      throw new Error(data.message || data.error || `HTTP ${res.status}`);
+    }
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    onUpdate?.({ phase: "failed", error });
+    throw new Error(error);
+  }
+  onUpdate?.({ phase: "success", hash: data.hash });
+  return data.hash;
 }
 
 /** Submit a signed XDR and wait for the result; returns the tx hash. */
