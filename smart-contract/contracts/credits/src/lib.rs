@@ -26,6 +26,7 @@ pub enum DataKey {
     Admin,
     Token,
     Treasury,
+    Paused,
     Balance(Address),
 }
 
@@ -37,6 +38,7 @@ pub enum Error {
     InsufficientCredit = 2,
     InsufficientTreasury = 3,
     Overflow = 4,
+    ContractPaused = 5,
 }
 
 #[contract]
@@ -54,6 +56,7 @@ impl CreditsContract {
     /// Agent/user deposits USDC and receives API credit 1:1. Returns the new credit balance.
     pub fn deposit(env: Env, from: Address, amount: i128) -> Result<i128, Error> {
         from.require_auth();
+        require_not_paused(&env)?;
         if amount <= 0 {
             return Err(Error::InvalidAmount);
         }
@@ -81,6 +84,7 @@ impl CreditsContract {
     /// treasury revenue (they stay in the contract). Returns the user's new balance.
     pub fn debit(env: Env, user: Address, amount: i128) -> Result<i128, Error> {
         require_admin(&env);
+        require_not_paused(&env)?;
         if amount <= 0 {
             return Err(Error::InvalidAmount);
         }
@@ -123,6 +127,7 @@ impl CreditsContract {
             &amount,
         );
 
+        bump_instance(&env);
         env.events()
             .publish((symbol_short!("withdraw"), user), amount);
         Ok(new_balance)
@@ -154,10 +159,29 @@ impl CreditsContract {
         Ok(new_treasury)
     }
 
-    /// Rotate the admin (gateway operator) key.
+    /// Rotate the admin (gateway operator) key. Emits an event for auditability.
     pub fn set_admin(env: Env, new_admin: Address) {
-        require_admin(&env);
+        let old: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
+        old.require_auth();
         env.storage().instance().set(&DataKey::Admin, &new_admin);
+        env.events()
+            .publish((symbol_short!("admin"), old), new_admin);
+    }
+
+    /// Incident switch: pausing blocks new deposits and gateway debits, but
+    /// NEVER withdrawals — users can always exit with their balance.
+    pub fn set_paused(env: Env, paused: bool) {
+        require_admin(&env);
+        env.storage().instance().set(&DataKey::Paused, &paused);
+        let admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
+        env.events().publish((symbol_short!("paused"), admin), paused);
+    }
+
+    pub fn paused(env: Env) -> bool {
+        env.storage()
+            .instance()
+            .get(&DataKey::Paused)
+            .unwrap_or(false)
     }
 
     // ─── Views ──────────────────────────────────────────────────────────────
@@ -182,6 +206,18 @@ impl CreditsContract {
 fn require_admin(env: &Env) {
     let admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
     admin.require_auth();
+}
+
+fn require_not_paused(env: &Env) -> Result<(), Error> {
+    let paused: bool = env
+        .storage()
+        .instance()
+        .get(&DataKey::Paused)
+        .unwrap_or(false);
+    if paused {
+        return Err(Error::ContractPaused);
+    }
+    Ok(())
 }
 
 fn read_token(env: &Env) -> Address {

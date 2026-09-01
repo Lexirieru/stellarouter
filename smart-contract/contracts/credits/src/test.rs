@@ -166,3 +166,33 @@ fn test_debit_requires_admin_auth() {
     let res = client.try_debit(&user, &100);
     assert!(res.is_err());
 }
+
+#[test]
+fn test_pause_blocks_deposit_and_debit_but_not_withdraw() {
+    let s = setup();
+    let user = Address::generate(&s.env);
+    s.token_mint.mint(&user, &1_000);
+    s.client.deposit(&user, &600);
+
+    s.client.set_paused(&true);
+    assert!(s.client.paused());
+
+    // deposits and debits are rejected while paused
+    assert_eq!(s.client.try_deposit(&user, &100), Err(Ok(Error::ContractPaused)));
+    assert_eq!(s.client.try_debit(&user, &100), Err(Ok(Error::ContractPaused)));
+
+    // but users can always exit with their full balance
+    assert_eq!(s.client.withdraw(&user, &600), 0);
+    assert_eq!(s.token.balance(&user), 1_000);
+
+    // unpause restores normal operation
+    s.client.set_paused(&false);
+    assert_eq!(s.client.deposit(&user, &100), 100);
+}
+
+#[test]
+fn test_set_paused_requires_admin_auth() {
+    let s = setup();
+    s.env.set_auths(&[]);
+    assert!(s.client.try_set_paused(&true).is_err());
+}
