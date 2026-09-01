@@ -282,6 +282,7 @@ policy badges, wallet-bound API keys, the live on-chain credits feed
 | Feedback collection widget (Level 4) | ![feedback](docs/screenshots/feedback-widget.png) |
 | Analytics on mobile | ![mobile analytics](docs/screenshots/mobile-analytics.png) |
 | Onboarding checklist (Level 5 — from user feedback) | ![onboarding](docs/screenshots/onboarding.png) |
+| Gasless top-up toggle (Level 6 — fee sponsorship) | ![gasless](docs/screenshots/gasless-toggle.png) |
 
 > Regenerate: run the app, connect a wallet, and capture — see
 > [docs/screenshots/README.md](docs/screenshots/README.md).

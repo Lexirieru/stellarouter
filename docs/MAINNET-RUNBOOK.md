@@ -122,6 +122,37 @@ from `/explorer/testnet/` to `/explorer/public/`.
    `fee_account = sponsor`, user XLM delta `0.0000000`
 6. One paid x402 call end to end, then a `withdraw` to prove refundability
 
+## 4b · Onboarding real mainnet users
+
+Mainnet users spend real money, so the ask has to be small and reversible. Fee
+sponsorship makes it genuinely risk-free, and that is the pitch:
+
+> Deposit **$0.10 USDC**, send one chat, then hit **Refund** and take the rest
+> back. We pay the network fees, so the only thing it costs you is the fraction
+> of a cent you actually spend on the model.
+
+Practical notes:
+
+- Keep the suggested amount tiny ($0.10–$0.50). The point is a real signed
+  transaction, not revenue.
+- Leave **Gasless** on so users need no XLM beyond their account reserve —
+  otherwise "get XLM first" kills the funnel.
+- Point people at the [user guide](./USER-GUIDE.md); the Get Started checklist
+  in the console ticks itself off as they go.
+- Collect name/email/wallet/rating with the existing
+  [Google Form](https://docs.google.com/forms/d/e/1FAIpQLSeRO3QSebcOD6j_tmppQ17q16FOmTVm6t_zds9hKwRP0XNjzw/viewform),
+  then export it next to [users-feedback.xlsx](./users-feedback.xlsx).
+- Verify each participant on-chain before counting them: their wallet must
+  appear in a `deposit` event on the mainnet contract. The Analytics page
+  counts unique wallets straight from those events.
+- Do **not** self-fund wallets to inflate the count. Testnet cohorts are a
+  DevRel-approved simulation; on mainnet the same pattern would be wash
+  activity with real money and is not acceptable as adoption proof.
+
+Where to find people: the Stellar Indonesia community, the RiseIn cohort
+(reciprocal testing is the norm — offer to test theirs), Stellar Discord
+`#dev-general`, and the launch thread itself ([draft](./LAUNCH-THREAD.md)).
+
 ## 5 · Incident response
 
 **Pause** (blocks new deposits and gateway debits; withdrawals stay open by
