@@ -23,6 +23,19 @@ Live on **Stellar mainnet** (and testnet) — built for the [RiseIn Stellar Jour
 
 Ecosystem comparison and positioning: [docs/COMPARISON.md](docs/COMPARISON.md) · Roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
 
+## Mainnet status
+
+| Flow | Mainnet | Evidence |
+|---|---|---|
+| Contract deployed | ✅ | [`CBTDB7A3…3NDG`](https://stellar.expert/explorer/public/contract/CBTDB7A3MZNBH7GRCFUZTQM3QESUHPLAVFJQ43Z2LQAEVAH5Z3AG3NDG) |
+| Gasless deposit (fee bump) | ✅ | [`0bd9a2a3…`](https://stellar.expert/explorer/public/tx/0bd9a2a3d4f98dfcac32c4078e4d5f05c4948aecc346eebb6217bcabf2ec03c7) — user XLM delta `0.0000000` |
+| Wallet-signature API key | ✅ | issued against the live gateway |
+| Prepaid call + on-chain debit | ✅ | [`73bf8ed4…`](https://stellar.expert/explorer/public/tx/73bf8ed4820fa5c728f1eee2478263a2a4bb9aff89c658ff99709b37578d8fba) — 200 OK, credit 0.0950 → 0.0900 |
+| Gasless refund | ✅ | [`77bd15e3…`](https://stellar.expert/explorer/public/tx/77bd15e3201cc6bd505cf5ec9947a4f79ed0eb8f4f39043e7112013b9698accf) — full balance returned |
+| x402 agent door | ⏳ testnet only | facilitator returns `unexpected_verify_error` on pubnet for a self-service key — [details & workarounds](docs/MAINNET-RUNBOOK.md#4c--known-blocker-x402-settlement-on-mainnet) |
+
+Reproduce the whole thing: `node backend/scripts/smoke-mainnet.js`.
+
 ## On-chain artifacts (mainnet · live)
 
 | Artifact | Value |

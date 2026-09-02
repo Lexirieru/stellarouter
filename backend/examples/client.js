@@ -24,8 +24,13 @@ if (!process.env.PAYER_SECRET_KEY) {
 // createEd25519Signer takes the raw S... secret and the CAIP-2 network id.
 const signer = createEd25519Signer(process.env.PAYER_SECRET_KEY, NETWORK);
 
+// On pubnet the client needs an explicit RPC URL — there is no public default.
+const rpcConfig = process.env.STELLAR_RPC_URL
+  ? { url: process.env.STELLAR_RPC_URL }
+  : undefined;
+
 const fetchWithPayment = wrapFetchWithPaymentFromConfig(fetch, {
-  schemes: [{ network: NETWORK, client: new ExactStellarScheme(signer) }],
+  schemes: [{ network: NETWORK, client: new ExactStellarScheme(signer, rpcConfig) }],
 });
 
 const res = await fetchWithPayment(`${GATEWAY}/v1/chat/completions`, {

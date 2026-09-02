@@ -90,7 +90,7 @@ console.log(`   credit ${creditBefore.toFixed(4)} → ${(await credit()).toFixed
 // 4 ─ x402 door (agent pays per call, zero XLM)
 step(4, "x402 call — agent pays USDC per request");
 const signer = createEd25519Signer(process.env.MAINNET_ADMIN_SECRET, "stellar:pubnet");
-const payFetch = wrapFetchWithPaymentFromConfig(fetch, { schemes: [{ network: "stellar:pubnet", client: new ExactStellarScheme(signer) }] });
+const payFetch = wrapFetchWithPaymentFromConfig(fetch, { schemes: [{ network: "stellar:pubnet", client: new ExactStellarScheme(signer, { url: "https://mainnet.sorobanrpc.com" }) }] });
 const x402 = await payFetch(`${GW}/v1/chat/completions`, {
   method: "POST", headers: { "content-type": "application/json" },
   body: JSON.stringify({ messages: [{ role: "user", content: "Say hi in five words." }] }),
