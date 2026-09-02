@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { SegmentedToggle } from "./SegmentedToggle";
 import { ModelSelect } from "./ModelSelect";
+import { explorerTx } from "@/lib/explorer";
 
 const GATEWAY = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3001";
 const MODEL_KEY = "stellarouter:model";
@@ -227,7 +228,7 @@ export function Playground() {
                   <>
                     {" · "}
                     <a
-                      href={`https://stellar.expert/explorer/testnet/tx/${m.receipt.tx}`}
+                      href={explorerTx(m.receipt.tx)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hover:underline"

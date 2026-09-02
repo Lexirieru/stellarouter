@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useWallet } from "@stellarouter/ui";
 import { readCredit, walletUsdcInfo } from "@/lib/credits";
+import { IS_MAINNET } from "@/lib/explorer";
 
 const DISMISS_KEY = "stellarouter:onboarding-dismissed";
 
@@ -66,7 +67,12 @@ export function GetStarted() {
     },
     {
       done: state.usdc,
-      label: (
+      label: IS_MAINNET ? (
+        <>
+          Fund your wallet with <b>USDC</b> on Stellar (any exchange or wallet
+          on-ramp) — you only need a small amount to try it
+        </>
+      ) : (
         <>
           Get testnet funds — XLM from{" "}
           <a
@@ -98,7 +104,7 @@ export function GetStarted() {
     <div className="mb-4 rounded-xl border border-black/10 bg-black/[.02] p-4">
       <div className="flex items-center justify-between">
         <div className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-          Get started on testnet
+          {IS_MAINNET ? "Get started" : "Get started on testnet"}
         </div>
         <button
           onClick={() => { setDismissed(true); try { localStorage.setItem(DISMISS_KEY, "1"); } catch {} }}

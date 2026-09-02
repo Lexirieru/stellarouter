@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState } from "react";
 import { fromStroops } from "@/lib/credits";
 import { fetchCreditEvents, type CreditEvent } from "@/lib/events";
+import { explorerTx } from "@/lib/explorer";
 
 const POLL_MS = 5_000;
 const MAX_ROWS = 25;
@@ -142,7 +143,7 @@ export function ActivityFeed({
                   {fromStroops(e.amount).toFixed(3)} USDC
                 </span>
                 <a
-                  href={`https://stellar.expert/explorer/testnet/tx/${e.txHash}`}
+                  href={explorerTx(e.txHash)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-zinc-400 underline-offset-2 hover:text-zinc-600 hover:underline"

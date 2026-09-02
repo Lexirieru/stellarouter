@@ -4,6 +4,7 @@
 // signing (in the wallet) → submitting → pending (waiting for a ledger) → success/failed.
 
 import type { TxPhase } from "@/lib/credits";
+import { explorerTx } from "@/lib/explorer";
 
 export type TxState = {
   /** Action label, e.g. "Top up", "Refund", "Enable USDC". */
@@ -12,8 +13,6 @@ export type TxState = {
   hash?: string;
   error?: string;
 };
-
-const EXPLORER = "https://stellar.expert/explorer/testnet/tx";
 
 const PHASE_COPY: Record<TxState["phase"], string> = {
   signing: "waiting for signature in your wallet…",
@@ -52,7 +51,7 @@ export function TxStatus({ state }: { state: TxState | null }) {
       </div>
       {hash && (
         <a
-          href={`${EXPLORER}/${hash}`}
+          href={explorerTx(hash)}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-1 block truncate font-mono text-xs underline-offset-2 hover:underline"
