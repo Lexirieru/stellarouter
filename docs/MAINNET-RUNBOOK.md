@@ -18,11 +18,20 @@ new keys, a new contract id and a network flip.
 
 ## 0 · Prerequisites (human actions)
 
-1. **Fund a mainnet deployer/admin account.** Budget **≈ 5 XLM**: 1 XLM base
-   reserve, 0.5 XLM for the USDC trustline subentry, contract upload + instance
-   rent for a 5.4 KB contract, and headroom for elevated fees (the network was
-   at 67 % capacity at review time). Read the exact fee from the simulation
-   before submitting — never guess.
+1. **Fund two mainnet accounts.** Roles are split so that a compromise of the
+   hot fee-paying key does not hand over admin powers (security review
+   **C-2**):
+
+   | Role | Purpose | Suggested funding |
+   |---|---|---|
+   | **Admin** (`MAINNET_ADMIN_*`) | Deploys the contract, is its admin, signs `debit` | ~4 XLM + operational USDC |
+   | **Sponsor** (`MAINNET_SPONSOR_*`) | Fee-bumps user transactions, receives x402 payments | ~2 XLM + a USDC trustline |
+
+   The ~4 XLM covers 1 XLM base reserve, 0.5 XLM for the USDC trustline
+   subentry, contract upload + instance rent for a 5.4 KB contract, and
+   headroom for elevated fees (the network was at 67 % capacity at review
+   time). Read the exact fee from the simulation before submitting — never
+   guess.
 2. **Fund an operational USDC balance** on the same account (x402 receipts land
    here; it also seeds the sponsor budget).
 3. **Get a mainnet OZ Channels API key** — <https://channels.openzeppelin.com>

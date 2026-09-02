@@ -195,8 +195,13 @@ app.get("/feedback", (_req, res) => res.json({ feedback: listFeedback(50) }));
 // ─── Fee sponsorship (gasless deposits/withdrawals via fee bump) ─────────────
 // The user signs; the gateway pays the network fee. Strictly allow-listed to
 // Stellarouter transactions — see src/sponsor.js.
+// The sponsor key is deliberately separate from the contract admin where
+// possible (security review C-2): it only ever pays fees, so its compromise
+// costs fee money rather than admin powers. Falls back to the admin key.
+const SPONSOR_SECRET = process.env.SPONSOR_SECRET || process.env.GATEWAY_ADMIN_SECRET;
+
 app.post("/sponsor", rateLimit({ windowMs: 60 * 60 * 1000, max: 20 }), async (req, res) => {
-  if (!process.env.GATEWAY_ADMIN_SECRET) {
+  if (!SPONSOR_SECRET) {
     return res.status(503).json({ error: "sponsor_unavailable", message: "Sponsor key not configured." });
   }
   const { xdr } = req.body ?? {};
@@ -204,7 +209,7 @@ app.post("/sponsor", rateLimit({ windowMs: 60 * 60 * 1000, max: 20 }), async (re
     return res.status(400).json({ error: "bad_xdr", message: "Send { xdr } — the signed transaction to sponsor." });
   }
   try {
-    const { hash } = await sponsorAndSubmit(xdr, process.env.GATEWAY_ADMIN_SECRET);
+    const { hash } = await sponsorAndSubmit(xdr, SPONSOR_SECRET);
     res.json({ ok: true, hash, fee_paid_by: "gateway" });
   } catch (err) {
     res.status(err.status ?? 502).json({ error: "sponsor_error", message: String(err?.message ?? err) });
@@ -248,7 +253,7 @@ app.get("/health", (_req, res) =>
     mainnet: IS_MAINNET,
     enabled_models: enabledModels(),
     // Fee sponsorship is available when the gateway holds a funded sponsor key.
-    sponsor: Boolean(process.env.GATEWAY_ADMIN_SECRET),
+    sponsor: Boolean(process.env.SPONSOR_SECRET || process.env.GATEWAY_ADMIN_SECRET),
   })
 );
 app.get("/", (_req, res) =>
