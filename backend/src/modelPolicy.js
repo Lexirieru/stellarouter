@@ -19,25 +19,34 @@ const DEFAULT_TESTNET_MODELS = [
   "nvidia/nemotron-3-super-120b-a12b:free",
 ];
 
-export const TESTNET_MODELS = (process.env.TESTNET_MODELS || "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
+const parseList = (v) =>
+  (v || "").split(",").map((s) => s.trim()).filter(Boolean);
+
+export const TESTNET_MODELS = parseList(process.env.TESTNET_MODELS);
 if (TESTNET_MODELS.length === 0) TESTNET_MODELS.push(...DEFAULT_TESTNET_MODELS);
 
-const allowed = new Set(TESTNET_MODELS);
+// On mainnet the catalog is open by default, but the x402 door charges a FLAT
+// price per call — an expensive model can cost more than it earns. Setting
+// MAINNET_MODELS caps that exposure to a known-cheap allow-list; leaving it
+// unset keeps every model enabled.
+export const MAINNET_MODELS = parseList(process.env.MAINNET_MODELS);
+
+const ACTIVE = IS_MAINNET ? MAINNET_MODELS : TESTNET_MODELS;
+const UNRESTRICTED = IS_MAINNET && MAINNET_MODELS.length === 0;
+
+const allowed = new Set(ACTIVE);
 
 /** Default model for requests that omit `model`. */
-export const DEFAULT_MODEL = IS_MAINNET ? "openai/gpt-4o-mini" : TESTNET_MODELS[0];
+export const DEFAULT_MODEL = UNRESTRICTED ? "openai/gpt-4o-mini" : ACTIVE[0];
 
 export function isModelEnabled(id) {
-  if (IS_MAINNET) return true;
+  if (UNRESTRICTED) return true;
   return typeof id === "string" && allowed.has(id);
 }
 
-/** Models usable right now (empty = all of them, on mainnet). */
+/** Models usable right now (empty = every model, i.e. unrestricted mainnet). */
 export function enabledModels() {
-  return IS_MAINNET ? [] : [...TESTNET_MODELS];
+  return UNRESTRICTED ? [] : [...ACTIVE];
 }
 
 /**
@@ -56,9 +65,11 @@ export function annotateCatalog(data) {
     data: annotated,
     network: NETWORK,
     enabled_models: enabledModels(),
-    policy: IS_MAINNET
+    policy: UNRESTRICTED
       ? "all models enabled"
-      : "testnet: only free/cheapest models enabled — full catalog on mainnet",
+      : IS_MAINNET
+        ? "mainnet: allow-listed models only (flat-price x402 cost guard)"
+        : "testnet: only free/cheapest models enabled — full catalog on mainnet",
   };
 }
 
@@ -74,8 +85,8 @@ export function gateModel(body) {
   }
   if (isModelEnabled(body.model)) return null;
   return {
-    error: "model_unavailable_on_testnet",
-    message: `"${body.model}" is available on mainnet only. Enabled on ${NETWORK}: ${TESTNET_MODELS.join(", ")}.`,
+    error: IS_MAINNET ? "model_not_enabled" : "model_unavailable_on_testnet",
+    message: `"${body.model}" is not enabled on ${NETWORK}. Enabled: ${ACTIVE.join(", ")}.`,
     enabled_models: enabledModels(),
     availability: "mainnet",
   };
