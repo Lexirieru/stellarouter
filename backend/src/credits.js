@@ -47,12 +47,19 @@ export async function readBalance(user) {
   return BigInt(S.scValToNative(sim.result.retval));
 }
 
+// Inclusion fee bid, in stroops. BASE_FEE (100) is fine on an empty testnet but
+// loses the inclusion auction on a busy pubnet ledger: the transaction is
+// accepted as PENDING, never included, and silently expires at its time bound.
+// Measured on mainnet: 100 → never included in 60s; 10,000 → included in 3.4s.
+// The resource fee dwarfs this anyway (~20,000 stroops for a debit).
+const INCLUSION_FEE = process.env.SOROBAN_INCLUSION_FEE || "10000";
+
 /** Charge a user's credit on-chain (admin-authorized). Returns the tx hash. */
 export async function debit(user, amountStroops) {
   const { server, contract, admin } = ctx();
   const src = await server.getAccount(admin.publicKey());
   const tx = new S.TransactionBuilder(src, {
-    fee: S.BASE_FEE,
+    fee: INCLUSION_FEE,
     networkPassphrase: PASSPHRASE,
   })
     .addOperation(
@@ -62,7 +69,7 @@ export async function debit(user, amountStroops) {
         S.nativeToScVal(BigInt(amountStroops), { type: "i128" })
       )
     )
-    .setTimeout(30)
+    .setTimeout(120)
     .build();
 
   const prepared = await server.prepareTransaction(tx);
@@ -76,7 +83,7 @@ export async function debit(user, amountStroops) {
   let res = await server.getTransaction(sent.hash);
   const t0 = Date.now();
   while (res.status === "NOT_FOUND") {
-    if (Date.now() - t0 > 30_000) throw new Error("debit poll timeout");
+    if (Date.now() - t0 > 45_000) throw new Error("debit poll timeout");
     await new Promise((r) => setTimeout(r, 1000));
     res = await server.getTransaction(sent.hash);
   }

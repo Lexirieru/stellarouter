@@ -35,6 +35,12 @@ const USDC_ISSUER =
 
 const horizon = new S.Horizon.Server(HORIZON_URL);
 
+// Inclusion fee bid, in stroops. BASE_FEE (100) wins on testnet's empty ledgers
+// but loses the auction on a busy pubnet ledger — the transaction is accepted
+// as PENDING and then silently expires. Measured on mainnet: 100 never landed
+// in 60s, 10,000 landed in 3.4s. Small next to the resource fee.
+const INCLUSION_FEE = process.env.NEXT_PUBLIC_INCLUSION_FEE || "10000";
+
 /** Whether the wallet has a USDC trustline, and its balance. */
 export async function walletUsdcInfo(
   address: string
@@ -53,7 +59,7 @@ export async function walletUsdcInfo(
 export async function buildAddTrustline(user: string): Promise<string> {
   const src = await server.getAccount(user);
   const tx = new S.TransactionBuilder(src, {
-    fee: S.BASE_FEE,
+    fee: INCLUSION_FEE,
     networkPassphrase: PASSPHRASE,
   })
     .addOperation(
@@ -114,11 +120,11 @@ async function prepareInvoke(
 ): Promise<string> {
   const src = await server.getAccount(user);
   const tx = new S.TransactionBuilder(src, {
-    fee: S.BASE_FEE,
+    fee: INCLUSION_FEE,
     networkPassphrase: PASSPHRASE,
   })
     .addOperation(contract.call(method, ...args))
-    .setTimeout(120)
+    .setTimeout(180)
     .build();
   const prepared = await server.prepareTransaction(tx);
   return prepared.toXDR();
@@ -190,7 +196,7 @@ export async function submit(
   let res = await server.getTransaction(sent.hash);
   const t0 = Date.now();
   while (res.status === "NOT_FOUND") {
-    if (Date.now() - t0 > 30_000) {
+    if (Date.now() - t0 > 60_000) {
       onUpdate?.({ phase: "failed", hash: sent.hash, error: "poll timeout" });
       throw new Error("transaction poll timeout");
     }
