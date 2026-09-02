@@ -1,5 +1,12 @@
 # Mainnet Runbook
 
+> **Status: DEPLOYED.** Stellarouter went live on pubnet on 2 Sep 2026 —
+> contract [`CBTDB7A3…3NDG`](https://stellar.expert/explorer/public/contract/CBTDB7A3MZNBH7GRCFUZTQM3QESUHPLAVFJQ43Z2LQAEVAH5Z3AG3NDG),
+> gateway and console flipped, fee sponsorship verified on-chain
+> ([`14946a5e…`](https://stellar.expert/explorer/public/tx/14946a5e9e17346d47aa2616d192f7a88de479b136680a91f8dee6f9d4b19149)).
+> Actual deploy cost: **7.649 XLM**. The steps below are the record of how, and
+> the procedure for redeploying.
+
 Everything needed to take Stellarouter from testnet to Stellar **pubnet**.
 By design the payment path is config-driven: no code changes are required, only
 new keys, a new contract id and a network flip.

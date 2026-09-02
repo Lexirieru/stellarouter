@@ -8,7 +8,7 @@
 > credit balance that lives **on-chain** in a Soroban contract: transparent,
 > auditable, and refundable at any time.
 
-Built on **Stellar testnet** for the [RiseIn Stellar Journey to Mastery](https://www.risein.com/programs/stellar-journey-to-mastery-monthly-builder-challenges) builder challenge.
+Live on **Stellar mainnet** (and testnet) — built for the [RiseIn Stellar Journey to Mastery](https://www.risein.com/programs/stellar-journey-to-mastery-monthly-builder-challenges) builder challenge.
 
 ## Why this exists
 
@@ -23,7 +23,24 @@ Built on **Stellar testnet** for the [RiseIn Stellar Journey to Mastery](https:/
 
 Ecosystem comparison and positioning: [docs/COMPARISON.md](docs/COMPARISON.md) · Roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
 
-## On-chain artifacts (testnet)
+## On-chain artifacts (mainnet · live)
+
+| Artifact | Value |
+|---|---|
+| `credits` contract **v1.1** | [`CBTDB7A3MZNBH7GRCFUZTQM3QESUHPLAVFJQ43Z2LQAEVAH5Z3AG3NDG`](https://stellar.expert/explorer/public/contract/CBTDB7A3MZNBH7GRCFUZTQM3QESUHPLAVFJQ43Z2LQAEVAH5Z3AG3NDG) |
+| Deploy tx (instance) | [`f3abd009…a7b3ec59`](https://stellar.expert/explorer/public/tx/f3abd0097583656d46e29eb18fa29ada30801379d054317a7361553fa7b3ec59) |
+| Deploy tx (WASM upload) | [`55edaa42…ada9410da`](https://stellar.expert/explorer/public/tx/55edaa421a11acbfae83d88899651e22459ac6055682caba37c6371ada9410da) |
+| Fee-sponsored tx (gasless) | [`14946a5e…d4b19149`](https://stellar.expert/explorer/public/tx/14946a5e9e17346d47aa2616d192f7a88de479b136680a91f8dee6f9d4b19149) — `fee_account` = sponsor, user XLM delta 0.0000000 |
+| Admin (contract admin, `debit` signer) | `GBNNB7IVYDIF3O6DXWFPYXZ3MC24E4YH2YWQEJ3UHDZXVE2QQD2R4KAP` |
+| Sponsor (fee bumps, x402 recipient) | `GAS7CB2ULPWUAY5ARWO7OKDY6TWFQRO2UZUVHIJZJNOJSM6EVBTOTHGQ` |
+| USDC (Circle, pubnet) | issuer `GA5ZSEJY…KZVN` · SAC [`CCW67TSZ…MI75`](https://stellar.expert/explorer/public/contract/CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75) |
+| WASM sha256 | `4435bfab3881f4e660592ee167fd0e6755674341ab371e1a3a36cc2df64a86b2` (5,431 bytes — reproduce with `stellar contract build`) |
+
+Deploy cost, for the record: **7.649 XLM** (7.5988258 upload + 0.0503836
+instance). Roles are split so the hot fee-paying key cannot touch admin
+powers — see [SECURITY-REVIEW.md](docs/SECURITY-REVIEW.md) finding C-2.
+
+## On-chain artifacts (testnet — where the 54-wallet cohort lives)
 
 | Artifact | Value |
 |---|---|

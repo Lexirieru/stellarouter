@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { fetchChainStats, type ChainStats } from "@/lib/analytics";
 import { GATEWAY } from "@/lib/gateway";
+import { IS_MAINNET } from "@/lib/explorer";
 
 type Metrics = {
   uptimeSeconds: number;
@@ -119,7 +120,7 @@ export default function AnalyticsPage() {
           <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
             <Tile label="Calls (instance)" value={String(metrics.calls.total)}
               hint={metrics.serverless ? "serverless — since cold start" : "since boot"} />
-            <Tile label="Upstream cost" value={`$${metrics.upstreamCostUSD.toFixed(4)}`} hint="free models on testnet" />
+            <Tile label="Upstream cost" value={`$${metrics.upstreamCostUSD.toFixed(4)}`} hint={IS_MAINNET ? "allow-listed models" : "free models on testnet"} />
             <Tile label="Avg speed" value={metrics.avgTokensPerSecond ? `${metrics.avgTokensPerSecond} tok/s` : "—"} />
             <Tile label="Price / call" value={metrics.priceUSDCPerCall} hint="x402 flat" />
           </div>
