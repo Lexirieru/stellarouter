@@ -15,6 +15,25 @@ new keys, a new contract id and a network flip.
 | USDC SAC (pubnet) | `CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75` |
 | Pubnet fee stats at review | p50 = p90 = 7,228 stroops (0.00072 XLM), ledger capacity 67 % |
 | Deployer account on pubnet | **Does not exist yet** — must be created and funded |
+| **Measured deploy cost** | **0.451 XLM** — WASM upload `dd561ae9…` 0.4470245 + instance creation `a8ab7632…` 0.0039149, from a real v1.1 deploy on testnet ([`CAK3YPO2…7D5BZ6`](https://stellar.expert/explorer/testnet/contract/CAK3YPO24VVH2SXLJUW6FRRYHQ6HJRE3UPH5TPQGQCMLG63WBV7D5BZ6)). Code-entry rent dominates; budget ≤ 1 XLM on pubnet for congestion headroom. |
+| Mainnet facilitator | `https://channels.openzeppelin.com/x402` — verified: `stellar:pubnet`, `areFeesSponsored: true`. Key from `https://channels.openzeppelin.com/gen` (no network prefix), sent as `Authorization: Bearer`. |
+
+### Minimum funding, measured
+
+Stellar's minimum balance is `(2 + subentries) × 0.5 XLM`, so a bare account
+locks 1 XLM and each trustline locks another 0.5. Locked reserves are *not*
+spendable — an account holding exactly 1 XLM cannot pay a single fee.
+
+| | Two accounts (recommended, role-split) | One account (cheapest, no split) |
+|---|---|---|
+| Base reserves | 2.0 | 1.0 |
+| USDC trustline(s) | 0.5 (admin only) | 0.5 |
+| Contract deploy | 0.45 | 0.45 |
+| Operating headroom (fees, bumps) | ~1.0 | ~0.5 |
+| **Total** | **≈ 4 XLM** (fund 4.5–5) | **≈ 2.5 XLM** |
+
+USDC needs are tiny: **0.1 USDC** covers a 0.05 deposit, a few $0.005 x402
+calls and a withdrawal — enough for the full smoke test.
 
 ## 0 · Prerequisites (human actions)
 
