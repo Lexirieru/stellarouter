@@ -15,7 +15,8 @@ new keys, a new contract id and a network flip.
 | USDC SAC (pubnet) | `CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75` |
 | Pubnet fee stats at review | p50 = p90 = 7,228 stroops (0.00072 XLM), ledger capacity 67 % |
 | Deployer account on pubnet | **Does not exist yet** — must be created and funded |
-| **Measured deploy cost** | **0.451 XLM** — WASM upload `dd561ae9…` 0.4470245 + instance creation `a8ab7632…` 0.0039149, from a real v1.1 deploy on testnet ([`CAK3YPO2…7D5BZ6`](https://stellar.expert/explorer/testnet/contract/CAK3YPO24VVH2SXLJUW6FRRYHQ6HJRE3UPH5TPQGQCMLG63WBV7D5BZ6)). Code-entry rent dominates; budget ≤ 1 XLM on pubnet for congestion headroom. |
+| **Deploy cost — testnet** | 0.451 XLM (upload `dd561ae9…` 0.4470245 + instance `a8ab7632…` 0.0039149), from a real v1.1 deploy ([`CAK3YPO2…7D5BZ6`](https://stellar.expert/explorer/testnet/contract/CAK3YPO24VVH2SXLJUW6FRRYHQ6HJRE3UPH5TPQGQCMLG63WBV7D5BZ6)) |
+| **Deploy cost — mainnet** | **≈ 9.2 XLM.** The WASM upload alone simulates at **8.7391536 XLM** for the same 5,431-byte contract — about **20× the testnet cost**, because pubnet's ledger write/rent pricing is far higher. **Do not budget mainnet from testnet numbers.** Always read `minResourceFee` from a pubnet simulation before funding. |
 | Mainnet facilitator | `https://channels.openzeppelin.com/x402` — verified: `stellar:pubnet`, `areFeesSponsored: true`. Key from `https://channels.openzeppelin.com/gen` (no network prefix), sent as `Authorization: Bearer`. |
 
 ### Minimum funding, measured
@@ -27,10 +28,13 @@ spendable — an account holding exactly 1 XLM cannot pay a single fee.
 | | Two accounts (recommended, role-split) | One account (cheapest, no split) |
 |---|---|---|
 | Base reserves | 2.0 | 1.0 |
-| USDC trustline(s) | 0.5 (admin only) | 0.5 |
-| Contract deploy | 0.45 | 0.45 |
+| USDC trustline | 0.5 (sponsor, to receive x402) | 0.5 |
+| **Contract deploy** | **9.2** | **9.2** |
 | Operating headroom (fees, bumps) | ~1.0 | ~0.5 |
-| **Total** | **≈ 4 XLM** (fund 4.5–5) | **≈ 2.5 XLM** |
+| **Total** | **≈ 12.7 XLM** | **≈ 11.2 XLM** |
+
+Split as: **ADMIN ≈ 10.5 XLM** (1.0 reserve + 9.2 deploy + fee headroom) and
+**SPONSOR ≈ 2 XLM** (1.0 reserve + 0.5 trustline + fee bumps).
 
 USDC needs are tiny: **0.1 USDC** covers a 0.05 deposit, a few $0.005 x402
 calls and a withdrawal — enough for the full smoke test.
@@ -74,13 +78,28 @@ stellar contract build         # → target/wasm32v1-none/release/credits.wasm (
 shasum -a 256 target/wasm32v1-none/release/credits.wasm
 
 stellar keys add stellarouter-mainnet --secret-key   # paste the funded S... key
+
+# NOTE: the CLI ships no RPC for its built-in `mainnet` network ("Bring Your
+# Own"), and passing a saved network alias did not apply it either — the deploy
+# fails with a misleading "Account not found". Pass the RPC explicitly:
 stellar contract deploy \
   --wasm target/wasm32v1-none/release/credits.wasm \
   --source-account stellarouter-mainnet \
-  --network mainnet \
+  --rpc-url https://mainnet.sorobanrpc.com \
+  --network-passphrase "Public Global Stellar Network ; September 2015" \
   -- \
   --admin <ADMIN_G_ADDRESS> \
   --token CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75
+```
+
+Check the cost before funding — simulate the upload and read `minResourceFee`:
+
+```js
+const sim = await rpc.simulateTransaction(
+  new TransactionBuilder(await rpc.getAccount(G), { fee: BASE_FEE, networkPassphrase: PASS })
+    .addOperation(Operation.uploadContractWasm({ wasm })).setTimeout(60).build()
+);
+console.log(Number(sim.minResourceFee) / 1e7, "XLM");
 ```
 
 The command prints the new contract id (`C…`). Verify it on
