@@ -209,47 +209,70 @@ Where to find people: the Stellar Indonesia community, the RiseIn cohort
 
 ## 4c · Known blocker: x402 settlement on mainnet
 
-The **prepaid door works end to end on mainnet** (verified — see the smoke-test
-results in the README). The **x402 agent door does not yet settle on pubnet**,
-and the cause is on the facilitator side, not in this codebase:
+The **prepaid door works end to end on pubnet** (verified — see the smoke-test
+table in the README). The **x402 agent door does not settle on pubnet**. The
+facilitator answers `/verify` with:
 
 ```
 POST https://channels.openzeppelin.com/x402/verify → 200
 {"invalidReason":"unexpected_verify_error","isValid":false}
 ```
 
-Everything we send is well-formed. The payment payload decodes to exactly what
-the protocol expects:
+### What we ruled out
 
-| Field | Value |
+The [official facilitator docs](https://developers.stellar.org/docs/build/agentic-payments/x402/built-on-stellar)
+list five verification steps. We reproduced each one locally against pubnet:
+
+| Docs' verification step | Our evidence | Result |
+|---|---|---|
+| 1. Version, scheme, network | `x402Version 2`, `exact`, `stellar:pubnet` | ✅ |
+| 2. `invokeHostFunction` calling `transfer` | decoded the captured payload | ✅ |
+| 3. Amount and recipient match | `50,000` stroops → our `payTo`, on the pubnet USDC SAC `CCW67TSZ…MI75` | ✅ |
+| 4. Auth entries signed by the payer | one `sorobanCredentialsAddress` entry, address = payer | ✅ |
+| 5. Simulates on-chain successfully | simulated on pubnet under the facilitator's own signer **and** the payer: `SIM OK, minResourceFee 33635` | ✅ |
+
+Configuration matches the docs exactly — mainnet facilitator
+`https://channels.openzeppelin.com/x402`, `Authorization: Bearer` on all three
+endpoints, key from `https://channels.openzeppelin.com/gen`.
+
+The key is genuinely authenticated **for mainnet**:
+
+| Key sent to the mainnet `/supported` | Response |
 |---|---|
-| contract | `CCW67TSZ…MI75` (USDC SAC, pubnet) ✓ |
-| function | `transfer` ✓ |
-| from → to | payer → our x402 recipient ✓ |
-| amount | 50,000 stroops (= $0.005) ✓ |
-| auth entries | 1 (signed by the payer) ✓ |
-| source account | null — the facilitator fills in a channel account ✓ |
+| random UUID | `401 Unauthorized` |
+| our testnet key | `401 Unauthorized` |
+| our mainnet key | `200` + `stellar:pubnet`, `areFeesSponsored: true` |
 
-The same code path settles successfully on testnet with a testnet key, and
-`GET /x402/supported` on mainnet returns our network with
-`areFeesSponsored: true`, so authentication and network support are fine.
+Amount is not the trigger either — `$0.05` fails identically to `$0.005`. And
+the same code path settles successfully on testnet.
 
-**Most likely cause:** a self-service key from `https://channels.openzeppelin.com/gen`
-is not authorised to consume *mainnet* fee sponsorship. Sponsoring pubnet fees
-costs the operator real XLM, so it is reasonable that this requires an
-agreement rather than an anonymous free key.
+### What remains
 
-**Next step (human):** ask OpenZeppelin (Discord / support) to enable mainnet
-settlement for the API key, or obtain a commercial key.
+Every observable precondition passes, so the failure is inside the
+facilitator's mainnet verify path — `unexpected_verify_error` reads like an
+unhandled exception rather than a validation verdict.
 
-**Alternatives if that stalls:**
-1. Self-settle: the gateway already has the fee-bump machinery in
-   [`sponsor.js`](../backend/src/sponsor.js) — it could verify the auth entry,
-   build the SAC transfer itself and pay the fee, removing the facilitator
-   dependency at the cost of sponsoring fees ourselves.
-2. Self-host OpenZeppelin Channels (their GCP/AWS operator guides).
-3. Ship mainnet with the prepaid door only and keep the agent door on testnet
-   until settlement is enabled — this is the current state.
+One documented discrepancy is worth reporting: the docs state that the mainnet
+key generator **"requires GitHub OAuth"**, but `GET https://channels.openzeppelin.com/gen`
+returns `201 {"apiKey":…}` to an unauthenticated request, and no OAuth entry
+point is reachable (`/`, `/login`, `/auth/github`, `/dashboard` all `401`). A
+key minted this way authenticates but may not be provisioned with a relayer or
+channel allocation on the mainnet service — which would explain a thrown
+exception during verification.
+
+### Options
+
+1. **Report it** to OpenZeppelin / the Stellar DevRel team with the evidence
+   above, and obtain a properly provisioned mainnet key.
+2. **Self-settle** — drop the facilitator dependency. The gateway already has
+   the machinery in [`sponsor.js`](../backend/src/sponsor.js): verify the auth
+   entry by simulation, build the SAC `transfer` ourselves, sign as the source,
+   pay the fee, submit. The trade-off is that we sponsor the fee (~0.003 XLM
+   per payment) instead of the facilitator.
+3. **Switch to MPP Charge**, the facilitator-free protocol Stellar documents as
+   the alternative when third-party dependency is unacceptable.
+4. **Ship as-is** — mainnet serves the prepaid door (the human flow, fully
+   working) while the agent door stays on testnet. This is the current state.
 
 ## 5 · Incident response
 

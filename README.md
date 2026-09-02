@@ -32,7 +32,7 @@ Ecosystem comparison and positioning: [docs/COMPARISON.md](docs/COMPARISON.md) �
 | Wallet-signature API key | ✅ | issued against the live gateway |
 | Prepaid call + on-chain debit | ✅ | [`73bf8ed4…`](https://stellar.expert/explorer/public/tx/73bf8ed4820fa5c728f1eee2478263a2a4bb9aff89c658ff99709b37578d8fba) — 200 OK, credit 0.0950 → 0.0900 |
 | Gasless refund | ✅ | [`77bd15e3…`](https://stellar.expert/explorer/public/tx/77bd15e3201cc6bd505cf5ec9947a4f79ed0eb8f4f39043e7112013b9698accf) — full balance returned |
-| x402 agent door | ⏳ testnet only | facilitator returns `unexpected_verify_error` on pubnet for a self-service key — [details & workarounds](docs/MAINNET-RUNBOOK.md#4c--known-blocker-x402-settlement-on-mainnet) |
+| x402 agent door | ⏳ testnet only | facilitator returns `unexpected_verify_error` on pubnet — our payload, key and on-chain simulation all verify — [details & workarounds](docs/MAINNET-RUNBOOK.md#4c--known-blocker-x402-settlement-on-mainnet) |
 
 Reproduce the whole thing: `node backend/scripts/smoke-mainnet.js`.
 
